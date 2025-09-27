@@ -1,6 +1,6 @@
 import { useContext, useState, createContext, useRef, useEffect, useImperativeHandle, use } from "react";
 import { ToastContainer, toast } from 'react-toastify';
-
+import { addSession } from "./firebase.js";
 export class Semana {
   agendamentos:Array<Agendamento>
 
@@ -225,10 +225,10 @@ function RegisterStudent({ref, scheduleDate}) {
   }
 
   type formAnswer = {
-    name: String
-    estágio: String
-    destalhes: String
-    tipo: String
+    name: string
+    estágio: string
+    destalhes: string
+    tipo: string
   }
 
   function handleFormSubmit(e) {
@@ -262,7 +262,8 @@ function RegisterStudent({ref, scheduleDate}) {
       // Atualizar a semana
       let tempSemana = Array.from(semanaContext?.semana?.agendamentos ?? []);
       tempSemana.push(new Agendamento(formData.name,formData.estágio,formData.tipo,formData.destalhes,localStorage.getItem('user'),date));
-
+      addSession(formData.name,formData.estágio,formData.tipo,formData.destalhes,date.getFullYear(),date.getDate(),`${date.getHours()}h${date.getMinutes()}`)
+      
       // Atualizar o estado com nova semana
       semanaContext?.setSemana(new Semana(tempSemana));
 

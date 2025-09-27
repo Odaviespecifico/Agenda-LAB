@@ -1,4 +1,5 @@
 import { useContext, useState, createContext, useRef, useEffect, useImperativeHandle, use } from "react";
+import { ToastContainer, toast } from 'react-toastify';
 
 export class Semana {
   agendamentos:Array<Agendamento>
@@ -39,6 +40,15 @@ export default function Agenda() {
   let [semana, setSemana] = useState(new Semana([new Agendamento('Maria Clara Andrade','kids 2',"Escola","Estudar algom kk", "Alexandra",new Date(2025,8,25,14)),new Agendamento('Maria Clara Andrade','kids 2',"Escola","Estudar algom kk", "Alexandra",new Date(2025,8,25,14)),new Agendamento('Thalles Augusto dos Santos Nascimento de Lira','kids 3',"Escola","Estudar algom kk", "Alexandra",new Date(2025,8,26,14)),new Agendamento('Joaninha123','kids 3',"Escola","Estudar algom kk", "Alexandra",new Date(2025,8,27,17))]))
   let modalRef = useRef<HTMLDialogElement|null>(null)
 
+  // If no date is in the URL 
+  useEffect(() => {
+    let URLParans = new URLSearchParams(window.location.search).get('date')?.replace('-','/') 
+    if (!URLParans) {
+      let date = new Date(Date.now())
+      let [day,month,year] = [ date.getDate(), date.getMonth()+1, date.getFullYear()]
+      window.location.search = `date=${day}-${month}-${year}`
+    }
+  },[])
   
   const SemanaContextValue = {semana, setSemana}
   function showRegisterModal(day, startTime) {
@@ -52,7 +62,7 @@ export default function Agenda() {
 
 
   return(
-    <div className="w-dvw h-dvh">
+    <div className="w-full h-dvh">
       <Header user={user} setUser={setUser}></Header>
       <SemanaContext value={SemanaContextValue}>
         
@@ -61,6 +71,7 @@ export default function Agenda() {
       </ModalContext.Provider>
       <RegisterStudent ref={modalRef} scheduleDate={scheduleDate}></RegisterStudent>
       </SemanaContext>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   )
 }
@@ -79,8 +90,8 @@ function Header({user, setUser}) {
 function ScheduleTable() {  
   return (
     <table className="w-full table-fixed">  
-      <thead className="sticky top-0 border-b-2 w-full">
-        <tr className="w-full text-xl font-bold text-center border-b-2">
+      <thead className="sticky top-0 border-b-2 w-full bg-purple-500 z-5">
+        <tr className="relative w-full text-xl font-bold text-center border-b-2">
           <td className="bg-purple-100 py-2 border-r-2 last:border-0 w-40">Horário</td>
           <td className="bg-purple-100 py-2 border-r-2 last:border-0">Segunda-feira <br /> {getDate(1)}</td>
           <td className="bg-purple-100 py-2 border-r-2 last:border-0">Terça-feira <br /> {getDate(2)}</td>
@@ -90,7 +101,7 @@ function ScheduleTable() {
           <td className="bg-purple-100 py-2 border-r-2 last:border-0">Sábado <br />{getDate(6)}</td>
         </tr>
     </thead>
-      <tbody>
+      <tbody className="relative z-1">
         <TableRow startTime={14} endTime={'14h45'}></TableRow>
         <TableRow startTime={15} endTime={'15h45'}></TableRow>
         <TableRow startTime={'16h15'} endTime={'16h45'}></TableRow>
@@ -103,7 +114,7 @@ function ScheduleTable() {
 
 function TableRow({startTime,endTime}) {
   return(
-    <tr className="text-xl text-center border-y-2 h-16 even:bg-gray-50 ">
+    <tr className="text-xl text-center border-y-2 h-16 even:bg-gray-50">
       <td className="select-none hover:bg-amber-200 transition-all border-t-2 bg-amber-100">{startTime} até {endTime}</td>
         <RowData day={1} startTime={startTime}></RowData>
         <RowData day={2} startTime={startTime}></RowData>
@@ -117,26 +128,38 @@ function TableRow({startTime,endTime}) {
 
 function RowData({day, startTime}) {
   let semanaContext = useContext(SemanaContext)
-  console.log(semanaContext?.semana)
   const renderRow = () => {
     return (
-      <>   
+      <div className="relative">   
         {semanaContext?.semana.agendamentos
-          .filter((agendamento) => agendamento.data.getDay() == day && agendamento.data.getHours() == startTime)
-          .map((agendamento, idx) => (
-            <Session key={idx} agendamento={agendamento} />
-          ))}
-      </>
+          .filter((agendamento) => {
+            if (startTime == '16h15') {
+              console.log("GetHours " + agendamento.data.getHours() + "h" + agendamento.data.getMinutes())
+              console.log("Start time "  + startTime)
+            }
+            return(
+              agendamento.data.getDay() == day && 
+              (agendamento.data.getHours() == startTime || ((agendamento.data.getHours() + "h" + agendamento.data.getMinutes()) == startTime))
+            )
+          })
+          .map((agendamento, idx) => 
+            {console.log(agendamento)
+              return(
+                <Session key={idx} agendamento={agendamento} />
+              )
+            }
+          )}
+      </div>
     )
   }
 
   return(
-    <td className="group transition-all text-left text-lg border-x-2 h-full -mb-5 ">
+    <td className="group/td transition-all text-left text-lg border-x-2 h-full -mb-5 ">
       <div className="flex flex-col justify-start h-full">
         {renderRow()}
         <ModalContext.Consumer>
           {({ showRegisterModal }) => (
-            <button className="cursor-pointer w-full not-only:border-t-2 text-gray-50 transition-all h-0 group-hover:text-black group-hover:h-full hover:bg-blue-200 active:bg-blue-300 focus:outline-0" onClick={() => showRegisterModal(day, startTime)}>
+            <button className="cursor-pointer w-full text-white transition-all scale-y-0 h-0 group-hover/td:text-black group-hover/td:scale-y-100 group-hover/td:h-full group-hover/td:bg-blue-50 hover:bg-blue-200 active:bg-blue-300 focus:outline-0" onClick={() => showRegisterModal(day, startTime)}>
               Agendar Aluno
             </button>
           )}
@@ -149,18 +172,26 @@ function RowData({day, startTime}) {
 type SessionDataProps = {agendamento:Agendamento|undefined}
 
 function Session({agendamento}:SessionDataProps) {
+  let semanaContext = useContext(SemanaContext)
   function handleSectionClick() {
     if (agendamento) {
       // navigator.clipboard.writeText(agendamento)
     }
   }
+
+  function handleCloseClick(e) {
+    let target = e.target
+    console.log(e.target)
+  }
+
   if (!agendamento) return null;
   return(
-    <div className="h-full select-all border-b-2 last-of-type:border-0 px-2 py-1" onClick={handleSectionClick}>
+    <div className="group/session relative h-full select-all border-b-2 last-of-type:border-0 px-2 py-1" onClick={handleSectionClick}>
       <b>Aluno:</b> {agendamento.nome} <br />
-      <b>Conteúdo: {agendamento.tipo}</b> {" - " + agendamento.conteúdo} <br />
+      <b>{agendamento.tipo}</b> {" - " + agendamento.conteúdo} <br />
       <b>Estágio:</b> {agendamento.estágio} <br />
       <b>Responsável:</b> {agendamento.responsável} <br />
+      <img className="absolute top-2 right-1 select-none bg-red-100 rounded-2xl opacity-0 transition-all group-hover/session:opacity-100 hover:bg-red-300" src="./closeX.svg" height='15px' width='15px' onClick={(e) => handleCloseClick(e)}></img>
     </div>
   )
 }
@@ -221,7 +252,12 @@ function RegisterStudent({ref, scheduleDate}) {
         console.error("Invalid day value:", day);
         return;
       }
-      date.setHours(parseInt(localStorage.getItem('startTime')!),0,0,0)
+      let startTime = localStorage.getItem('startTime')?.split('h')
+      console.log("Start time = " + startTime)
+      const hour = parseInt(startTime?.at(0) ?? "0");
+      const minute = parseInt(startTime?.at(1) ?? "0");
+      date.setHours(hour,minute,0,0)
+      console.debug(date)
 
       // Atualizar a semana
       let tempSemana = Array.from(semanaContext?.semana?.agendamentos ?? []);
@@ -232,10 +268,10 @@ function RegisterStudent({ref, scheduleDate}) {
 
       target.reset()
 
+      toast.success("Agendamento realizado com sucesso!")
       // Hide the dialog
       let dialog = document.querySelector('dialog')
       dialog?.close()
-
     }
   }
 
@@ -293,7 +329,7 @@ function getDate (dayIndex) {
       if (date.getMonth() == 0) {
         monthString = '12'
       }
-      else if (date.getMonth.toString().length == 1) {
+      else if (date.getMonth().toString().length == 1) {
         monthString = "0" + (date.getMonth() + 1) 
       }
       else {

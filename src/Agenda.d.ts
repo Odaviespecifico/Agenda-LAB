@@ -1,7 +1,6 @@
 export declare class Semana {
-    primeiroDia: Date;
     agendamentos: Array<Agendamento>;
-    constructor(primeiroDia: Date, agendamentos: Array<Agendamento>);
+    constructor(agendamentos: Array<Agendamento>);
 }
 export declare class Agendamento {
     nome: string;

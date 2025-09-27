@@ -1,5 +1,0 @@
-import { createContext } from 'react';
-import { Semana, Agendamento } from './Agenda.js';
-const SemanaContext = createContext(new Semana(new Date(2025, 8, 25, 15), [new Agendamento('Maria Clara Andrade', 'kids 2', "Escola", "Estudar algom kk", "Alexandra", new Date(2025, 8, 25, 14)), new Agendamento('Maria Clara Andrade', 'kids 2', "Escola", "Estudar algom kk", "Alexandra", new Date(2025, 8, 25, 14)), new Agendamento('Thalles Augusto dos Santos Nascimento de Lira', 'kids 3', "Escola", "Estudar algom kk", "Alexandra", new Date(2025, 8, 26, 14)), new Agendamento('Joaninha123', 'kids 3', "Escola", "Estudar algom kk", "Alexandra", new Date(2025, 8, 27, 17))]));
-const ModalContext = createContext(undefined);
-//# sourceMappingURL=Contexts.js.map

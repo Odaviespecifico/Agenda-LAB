@@ -4,12 +4,49 @@ import { ModalContext, SemanaContext } from "../../Agenda.js";
 import { deletefromDB } from "../../firebase.js";
 
 export function TableRow({ startTime, endTime }) {
+  function getSaturdayStartTime(startTime) {
+    switch (startTime) {
+      case '14h':
+        return '9h';
+      case '15h':
+        return '10h';
+      case '16h15':
+        return '11h';
+      case '17h15':
+        return '12h';
+    }
+  }
+  function getSaturdayEndTime(endTime) {
+    switch (endTime) {
+      case '14h45':
+        return '9h45';
+      case '15h45':
+        return '10h45'
+      case '17h':
+        return '11h45'
+      case '18h':
+        return '12h45'
+    }
+  }
+
+  function renderSaturday() {
+    if (startTime != '18h') {
+      return (
+        <>
+          <td className="select-none bg-amber-100 py-2 px-2 font-semibold">{getSaturdayStartTime(startTime)} até {getSaturdayEndTime(endTime)}</td>
+          <RowData key={6} day={6} startTime={getSaturdayStartTime(startTime)} />
+        </>
+      )
+    }
+  }
   return (
     <tr className="text-lg text-center border-b border-gray-200 even:bg-gray-50 hover:bg-gray-100 transition-all">
       <td className="select-none bg-amber-100 py-2 px-2 font-semibold">{startTime} até {endTime}</td>
-      {[1, 2, 3, 4, 5, 6].map(day => (
-        <RowData key={day} day={day} startTime={startTime} />
-      ))}
+      {[1, 2, 3, 4, 5].map(day => (
+          <RowData key={day} day={day} startTime={startTime} />
+        ))}
+    {/* For the saturday */}
+    {renderSaturday()}
     </tr>
   );
 }
@@ -20,8 +57,7 @@ function RowData({ day, startTime }) {
   function verifySession(agendamento: Agendamento) {
     return (
       agendamento.data.getDay() === day &&
-      (agendamento.data.getHours() === startTime ||
-        `${agendamento.data.getHours()}h${agendamento.data.getMinutes()}` === startTime)
+      (agendamento.data.getHours()+'h' === startTime || `${agendamento.data.getHours()}h${agendamento.data.getMinutes()}` === startTime)
     );
   }
 

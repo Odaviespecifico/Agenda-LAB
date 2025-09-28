@@ -51,7 +51,6 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
 
       // Para agendamentos Fixos
       if (rawData.fixo) {
-        console.log("Agendando FIXO");
         const inputFixoInicio = document.getElementById(
           "inicio_fixo"
         ) as HTMLInputElement | null;
@@ -62,7 +61,6 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
           console.error("Input não encontrado");
           return;
         }
-        console.log(inputFixoInicio.value)
         let [yInicio,mInicio,dInicio] = inputFixoInicio.value.split('-').map(Number)
         let [yFim,mFim,dFim] = inputFixoFim.value.split('-').map(Number)
         
@@ -70,7 +68,6 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
 
         // Verifica se o input fim é maior que o início
         if (dates[0]! > dates[1]!) {
-          console.log("maior");
           inputFixoFim.setCustomValidity(
             "A data final não pode ser menor que a inicial!"
           );
@@ -100,7 +97,6 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
         formData.day_index = dayIndex;
         formData.fixo = true
       }
-
       // Cria a data para o agendamento
       let date = new Date(Date.now());
       if (day && typeof day === "string" && day.includes("/")) {
@@ -112,10 +108,10 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
         return;
       }
       let startTime = localStorage.getItem("startTime")?.split("h");
-      const hour = parseInt(startTime?.at(0) ?? "0");
-      const minute = parseInt(startTime?.at(1) ?? "0");
+      console.log(startTime)
+      const hour = parseInt(startTime?.at(0)!);
+      const minute = parseInt(startTime?.at(1) ? startTime.at(1)! : "0");
       date.setHours(hour, minute, 0, 0);
-
       // Adiciona ao Banco de dados
       if (fixo) {
         addSession(
@@ -198,7 +194,7 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md flex flex-col gap-4 text-lg"
   >
     <h1 className="text-center text-2xl font-semibold">
-      Criar agendamento - {day} às {localStorage.getItem("startTime") + "h"}
+      Criar agendamento - {day} às {localStorage.getItem("startTime")}
     </h1>
 
     <div className="flex flex-col gap-2">

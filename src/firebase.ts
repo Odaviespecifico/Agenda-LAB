@@ -52,6 +52,7 @@ export async function addSession(
   fimFixo?: Date,
 ) {
   let toastId
+  console.log(horario)
   try {
     toastId = toast.loading("Adicionando agendamento para " + nome, {
     })
@@ -92,6 +93,7 @@ export async function addSession(
     });
     }
     if (!fixo) {
+      console.log(horario)
       docRef = await addDoc(collection(db, "agendamentos"), {
       nome: nome,
       estágio: estágio,

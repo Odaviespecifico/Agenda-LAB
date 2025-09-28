@@ -23,17 +23,18 @@ export function ScheduleTable() {
             <td className="py-3 px-2 border-r border-purple-300">
               Sexta-feira <br /> {getDate(5) as string}
             </td>
+            <td className="py-3 px-2 border-r border-purple-300 w-42">Horário Sábado</td>
             <td className="py-3 px-2 border-r-0 border-purple-300">
               Sábado <br /> {getDate(6) as string}
             </td>
           </tr>
         </thead>
         <tbody className="bg-white text-center">
-          <TableRow startTime={14} endTime={"14h45"} />
-          <TableRow startTime={15} endTime={"15h45"} />
-          <TableRow startTime={"16h15"} endTime={"16h45"} />
-          <TableRow startTime={17} endTime={"17h45"} />
-          <TableRow startTime={18} endTime={"18h45"} />
+          <TableRow startTime={'14h'} endTime={"14h45"} />
+          <TableRow startTime={'15h'} endTime={"15h45"} />
+          <TableRow startTime={"16h15"} endTime={"17h"} />
+          <TableRow startTime={'17h15'} endTime={"18h"} />
+          <TableRow startTime={'18h'} endTime={"18h45"} />
         </tbody>
       </table>
     </div>

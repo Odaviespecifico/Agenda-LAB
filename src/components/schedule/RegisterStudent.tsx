@@ -186,77 +186,88 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     }
   }
   return (
-    <dialog
-      ref={ref}
-      className="aboslute h-dvh w-dvw hidden items-center justify-center bg-transparent backdrop:bg-blue-950/20"
-      onFocus={handleStorageChange}
-      onClose={(e) => handleclose(e)}
-    >
-      <form
-        ref={formRef}
-        action=""
-        className="p-5 bg-white h-fit w-fit flex flex-col gap-4 text-xl"
-        onSubmit={(e) => handleFormSubmit(e)}
+<dialog
+  ref={ref}
+  className="aboslute top-10 z-50 h-screen w-[110%]  items-center justify-center bg-white/20 backdrop-blur-sm p-4 hidden"
+  onFocus={handleStorageChange}
+  onClose={handleclose}
+>
+  <form
+    ref={formRef}
+    onSubmit={handleFormSubmit}
+    className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md flex flex-col gap-4 text-lg"
+  >
+    <h1 className="text-center text-2xl font-semibold">
+      Criar agendamento - {day} às {localStorage.getItem("startTime") + "h"}
+    </h1>
+
+    <div className="flex flex-col gap-2">
+      <label htmlFor="name" className="font-medium">Nome:</label>
+      <input
+        type="text"
+        name="name"
+        required
+        className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
+      />
+    </div>
+
+    <div className="flex flex-col gap-2">
+      <label htmlFor="estágio" className="font-medium">Estágio:</label>
+      <input
+        type="text"
+        name="estágio"
+        required
+        className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
+      />
+    </div>
+
+    <div className="flex flex-col gap-2">
+      <label htmlFor="tipo" className="font-medium">Conteúdo:</label>
+      <select
+        name="tipo"
+        id="tipo"
+        className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
       >
-        <h1 className="text-center font-medium">
-          Criar agendamento - {day} às {localStorage.getItem("startTime") + "h"}
-        </h1>
-        <div className="flex gap-4">
-          <label htmlFor="name">Nome:</label>
-          <input
-            type="text"
-            name="name"
-            required
-            className="border-1 rounded-sm w-full"
-          />
-        </div>
-        <div className="flex gap-4">
-          <label htmlFor="estágio">Estágio:</label>
-          <input
-            type="text"
-            name="estágio"
-            className="border-1 rounded-sm w-full"
-            required
-          />
-        </div>
-        <div className="flex gap-4">
-          <label htmlFor="tipo">Conteúdo</label>
-          <select
-            name="tipo"
-            id="tipo"
-            className="border-1"
-            onChange={(e) => handleSelectChange(e)}
-          >
-            <option value="Reposição">Resposição</option>
-            <option value="Escolar">Escolar</option>
-            <option value="Revisão">Revisão</option>
-            <option value="Homework">Homework</option>
-            <option value="Final Test">Final Test</option>
-            <option value="Midterm Test">Midterm Test</option>
-            <option value="Online">Online</option>
-            <option value="Outro">Outro</option>
-          </select>
-        </div>
-        <div className="flex gap-4">
-          <label htmlFor="detalhes">Detalhes:</label>
-          <input
-            type="text"
-            name="detalhes"
-            className="border-1 rounded-sm w-full"
-          />
-        </div>
-        <div className="flex gap-4">
-          <label htmlFor="fixo">Agendamento é fixo?</label>
-          <input type="checkbox" name="fixo" id="fixo" onInput={(e) => {togleFixo(e)}}/>
-        </div>
-        {optionsFixo()}
-        <button
-          type="submit"
-          className="select-none bg-blue-200 p-2 w-fit self-center font-medium rounded-lg hover:bg-blue-300 active:bg-blue-400 transition-all"
-        >
-          Confirmar agendamento
-        </button>
-      </form>
-    </dialog>
+        <option value="Reposição">Reposição</option>
+        <option value="Escolar">Escolar</option>
+        <option value="Revisão">Revisão</option>
+        <option value="Homework">Homework</option>
+        <option value="Final Test">Final Test</option>
+        <option value="Midterm Test">Midterm Test</option>
+        <option value="Online">Online</option>
+        <option value="Outro">Outro</option>
+      </select>
+    </div>
+
+    <div className="flex flex-col gap-2">
+      <label htmlFor="detalhes" className="font-medium">Detalhes:</label>
+      <input
+        type="text"
+        name="detalhes"
+        className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
+      />
+    </div>
+
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        name="fixo"
+        id="fixo"
+        onInput={togleFixo}
+        className="w-5 h-5 accent-blue-500"
+      />
+      <label htmlFor="fixo" className="font-medium">Agendamento é fixo?</label>
+    </div>
+
+    {optionsFixo()}
+
+    <button
+      type="submit"
+      className="self-center bg-gradient-to-r from-blue-400 to-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-all"
+    >
+      Confirmar agendamento
+    </button>
+  </form>
+</dialog>
   );
 }

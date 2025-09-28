@@ -1,18 +1,32 @@
 import { useEffect, useRef } from "react";
+import { signOut,getAuth } from "firebase/auth";
+
 export function Header({ user, setUser }) {
+    async function handleLogout() {
+    const auth = getAuth()
+    await signOut(auth);
+    setUser(null);
+  }
+
   return (
-    <>
-      <div className="relative h-12 w-full flex justify-between items-center p-2 text-lg bg-gray-50 shadow-md z-10 overflow-visible">
+    <div className="relative h-12 w-full flex justify-between items-center px-4 text-lg bg-gray-50 shadow-md z-10">
+      <h1 className="font-bold">Agenda Lab</h1>
+
+      <div className="flex items-center gap-4">
         <h1>
-          <b>Agenda Lab</b>
+          Usuário: <span className="font-bold">{user}</span>
         </h1>
-        <h1>
-          Usuário: <span className="font-bold"> {user}</span>
-        </h1>
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200"
+        >
+          Sair
+        </button>
       </div>
-    </>
+    </div>
   );
 }
+
 export class Semana {
   agendamentos: Array<Agendamento>;
   constructor(agendamentos: Array<Agendamento>) {
@@ -99,6 +113,7 @@ export function Footer() {
         </button>
       <input ref={weekRef} type="date" name="" id="" className="icon-date w-40" onInput={(e) => setWeek(e)}/>
       <b>Semana: </b>
+      <img src="./dw logo.svg" alt="Logo DW" height={'15px'} width={'15px'} className="size-14 mr-auto"/>
       {/* <WeekRectangle week={'22/09'}/> */}
     </div>
   )

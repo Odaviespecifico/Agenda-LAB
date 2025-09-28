@@ -12,6 +12,8 @@ import { addSession, getSessions, listenToChancesInDB, deletefromDB, signInWithG
 import { Header, Footer, Semana, Agendamento } from "./components/schedule/Utils.js";
 import { ScheduleTable } from "./components/schedule/ScheduleTable.js";
 import { RegisterStudentModal } from "./components/schedule/RegisterStudent.js";
+import { getAuth, onAuthStateChanged,} from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 // Contexts
 interface SemanaContextType {
@@ -22,7 +24,22 @@ export const SemanaContext = createContext<SemanaContextType | null>(null);
 export const ModalContext = createContext<any>(undefined);
 
 export default function Agenda() {
-  let [user, setUser] = useState("Juliana Ramos");
+  const navigate = useNavigate()
+  const auth = getAuth()
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+    if (!(user.email?.substring(user.email.indexOf('@')) == '@cna.com.br')) {
+      navigate('/authWrongEmail')
+    }
+    let userName = user.displayName ?? "";
+    console.log("User is signed in:", user.displayName);
+    setUser(userName)
+  } else {
+    console.log("User is signed out.");
+    navigate('/')
+  }
+});
+  let [user, setUser] = useState('');
   let [scheduleDate, setScheduleDate] = useState(Date);
   let [semana, setSemana] = useState(new Semana([]));
   let modalRef = useRef<HTMLDialogElement | null>(null);

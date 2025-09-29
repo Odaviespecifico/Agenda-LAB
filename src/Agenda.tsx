@@ -28,6 +28,7 @@ export default function Agenda() {
   const auth = getAuth()
   onAuthStateChanged(auth, (user) => {
     if (user) {
+    console.log(user.email)
     if (!(user.email?.substring(user.email.indexOf('@')) == '@cna.com.br')) {
       navigate('/authWrongEmail')
     }

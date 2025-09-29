@@ -119,9 +119,9 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
 
   return (
     <div
-      className={`${bgColor} relative rounded-lg p-2 shadow-sm hover:shadow-md transition-all group cursor-pointer`}
+      className={`${bgColor} relative rounded-lg p-2 shadow-sm hover:shadow-md transition-all  cursor-pointer`}
     >
-      <div className="overflow-x-hidden hover:overflow-x-auto">
+      <div className="overflow-x-hidden hover:overflow-x-auto peer">
         <b>Aluno {agendamento.fixo ? "fixo" : ""}:</b> {agendamento.nome} <br />
         <b>Estágio:</b> {agendamento.estágio} <br />
         <b>{agendamento.tipo}</b> - {agendamento.conteúdo} <br />
@@ -130,7 +130,7 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
       <img
         src="./closeX.svg"
         alt="Remover"
-        className="absolute top-1 right-1 w-4 h-4 p-0.5 rounded-full bg-red-100 opacity-0 group-hover:opacity-100 hover:bg-red-300 cursor-pointer transition"
+        className="absolute top-1 right-1 w-4 h-4 p-0.5 rounded-full bg-red-100 opacity-0 peer-hover:opacity-100 hover:bg-red-300 hover:opacity-100  cursor-pointer transition"
         onClick={handleCloseClick}
       />
     </div>

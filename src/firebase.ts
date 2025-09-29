@@ -192,11 +192,13 @@ export function listenToChancesInDB(setterFunction: Function) {
 
   const weekMiliseconds = 7 * 24 * 60 * 60 * 1000;
   const date = getDate('0', 'date') as Date;
+  console.log(date)
   const dateNextWeek = new Date(date.getTime() + weekMiliseconds);
 
   const qFixo = query(collection(db, "agendamentos"),
     where("fixo", "==", true),
-    where("inicioFixo", "<=", Timestamp.fromDate(date)),
+    // To fix the bug of new schedulings not showing up when recurrent
+    where("inicioFixo", "<=", Timestamp.fromDate(new Date(date.getTime() + weekMiliseconds))),
     where("fimFixo", ">=", Timestamp.fromDate(date))
   );
 
@@ -214,6 +216,7 @@ export function listenToChancesInDB(setterFunction: Function) {
     // Update the cache for fixed appointments
     fixedAgendamentosCache.clear(); // Clear previous results for this query
     snapshot.forEach((doc) => {
+      console.log(doc.data())
       fixedAgendamentosCache.set(doc.id, new Agendamento(
         doc.data().nome, doc.data().estágio, doc.data().tipo,
         doc.data().conteúdo, doc.data().responsável,

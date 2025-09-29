@@ -6,7 +6,7 @@ export function ScheduleTable() {
     <div className="h-full overflow-y-auto p-2">
       <table className="w-full table-fixed border-collapse rounded-xl overflow-hidden shadow-lg">
         <thead className="sticky top-0 z-10">
-          <tr className="bg-purple-200 text-gray-800 text-lg font-semibold text-center">
+          <tr className="bg-purple-200 text-gray-800 text-base font-semibold text-center">
             <td className="py-3 px-2 border-r border-purple-300 w-42">Horário</td>
             <td className="py-3 px-2 border-r border-purple-300">
               Segunda-feira <br /> {getDate(1) as string}

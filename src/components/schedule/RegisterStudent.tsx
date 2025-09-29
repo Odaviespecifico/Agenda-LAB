@@ -184,7 +184,7 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
   return (
 <dialog
   ref={ref}
-  className="aboslute top-10 z-50 h-screen w-[110%]  items-center justify-center bg-white/20 backdrop-blur-sm p-4 hidden"
+  className="fixed top-0 left-0 z-50 h-screen w-[110%]  items-center justify-center bg-white/20 backdrop-blur-sm p-4 hidden m-0"
   onFocus={handleStorageChange}
   onClose={handleclose}
 >

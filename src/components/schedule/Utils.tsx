@@ -113,7 +113,7 @@ export function Footer() {
         </button>
       <input ref={weekRef} type="date" name="" id="" className="icon-date w-40" onInput={(e) => setWeek(e)}/>
       <b>Semana: </b>
-      <img src="./dw logo.svg" alt="Logo DW" height={'15px'} width={'15px'} className="size-14 mr-auto"/>
+      <img src="./dw logo.svg" alt="Logo DW" height={'15px'} width={'15px'} className="size-8 mr-auto"/>
       {/* <WeekRectangle week={'22/09'}/> */}
     </div>
   )

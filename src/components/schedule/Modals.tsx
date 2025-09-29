@@ -1,5 +1,5 @@
 import { SemanaContext } from "../../Agenda.js";
-import { useContext, useEffect, useState, useRef } from "react";
+import { useContext, useEffect, useState, useRef, type RefCallback } from "react";
 import { getDate } from "./Utils.js";
 import { addSession } from "../../firebase.js";
 
@@ -11,12 +11,28 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
   let [fixo, setFixo] = useState(false)
   useEffect(() => {
     window.addEventListener("storage", handleStorageChange);
-  }, []);
-
+    window.addEventListener('keydown', handleEsc)
+    setDay(getDate(parseInt(localStorage.getItem("day")!), "string") as string);
+    setTime(localStorage.getItem("startTime"));
+  }, [localStorage]);
+  
   function handleStorageChange() {
     setDay(getDate(parseInt(localStorage.getItem("day")!), "string") as string);
     setTime(localStorage.getItem("startTime"));
   }
+
+  function closeModal() {
+  if (ref && "current" in ref && ref.current instanceof HTMLDialogElement) {
+    ref.current.close();
+    ref.current.classList.replace("flex", "hidden");
+  }
+}
+
+  function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    }
 
   function handleclose(e) {
     let target: HTMLDialogElement = e.target;
@@ -151,6 +167,7 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
       // Hide the dialog
       let dialog = document.querySelector("dialog");
       dialog?.close();
+      dialog?.classList.replace('flex','hidden')
       setFixo(false);
     }
   }
@@ -184,17 +201,28 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
   return (
 <dialog
   ref={ref}
-  className="fixed top-0 left-0 z-50 h-screen w-[110%]  items-center justify-center bg-white/20 backdrop-blur-sm p-4 hidden m-0"
-  onFocus={handleStorageChange}
+  className="fixed top-0 left-0 z-40 h-screen w-screen items-center justify-center bg-white/20 backdrop-blur-xs p-4 hidden m-0"
+  onMouseMove={handleStorageChange}
+  onClick={handleStorageChange}
+  onMouseOver={handleStorageChange}
   onClose={handleclose}
 >
+  
   <form
     ref={formRef}
     onSubmit={handleFormSubmit}
     className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md flex flex-col gap-4 text-lg"
   >
-    <h1 className="text-center text-2xl font-semibold">
+    
+    <h1 className="flex justify-center text-center text-2xl font-semibold">
       Criar agendamento - {day} às {localStorage.getItem("startTime")}
+      <button
+    type="button"
+    onClick={closeModal}
+    className="ml-auto text-gray-500 hover:text-gray-700 text-xl"
+  >
+    ✕
+  </button>
     </h1>
 
     <div className="flex flex-col gap-2">
@@ -266,4 +294,45 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
   </form>
 </dialog>
   );
+}
+
+type StudentsSizeModalProps = {
+  visible: boolean
+  setVisibility: Function
+  modal: HTMLDialogElement
+}
+
+export function StudentSizeModal({visible, setVisibility, modal}:StudentsSizeModalProps) {
+
+  function handleYesClick() {
+    setVisibility(false)
+    modal.classList.replace('hidden','flex')
+    // Highlight the first one
+    let input:HTMLInputElement = document.querySelector('dialog input')!
+    console.log(input)
+    input.focus()
+  }
+  function handleNoClick() {
+    modal.classList.replace('flex','hidden')
+    setVisibility(false)
+  }
+  return (
+    <div className={`fixed inset-0 z-50 ${visible? 'flex' : 'hidden'} items-center justify-center bg-black/20 backdrop-blur-sm`}>
+      <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md text-center animate-scaleUp">
+        <h1 className="text-2xl font-semibold mb-3">Aviso</h1>
+        <p className="text-gray-700 mb-6">
+          Nesse horário já temos o limite de alunos agendados. Tem certeza que deseja agendar outro?
+        </p>
+
+        <div className="flex justify-center gap-4">
+          <button onClick={handleYesClick} className="px-5 py-2 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition">
+            Sim
+          </button>
+          <button onClick={handleNoClick} className="px-5 py-2 rounded-xl bg-gray-300 text-gray-800 font-medium hover:bg-gray-400 transition">
+            Não
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }

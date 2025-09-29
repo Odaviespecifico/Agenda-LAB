@@ -11,7 +11,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { addSession, getSessions, listenToChancesInDB, deletefromDB, signInWithGoogle } from "./firebase.js";
 import { Header, Footer, Semana, Agendamento } from "./components/schedule/Utils.js";
 import { ScheduleTable } from "./components/schedule/ScheduleTable.js";
-import { RegisterStudentModal } from "./components/schedule/RegisterStudent.js";
+import { RegisterStudentModal, StudentSizeModal } from "./components/schedule/Modals.js";
 import { getAuth, onAuthStateChanged,} from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -39,6 +39,8 @@ export default function Agenda() {
     navigate('/')
   }
 });
+
+  let [sessionWaningVisibility, setSessionWaningVisibility] = useState(false)
   let [user, setUser] = useState('');
   let [scheduleDate, setScheduleDate] = useState(Date);
   let [semana, setSemana] = useState(new Semana([]));
@@ -65,12 +67,20 @@ export default function Agenda() {
 
   const SemanaContextValue = { semana, setSemana };
 
-  function showRegisterModal(day, startTime) {
+  function showRegisterModal(day, startTime,sessions:Array<Agendamento>) {
     localStorage.setItem("day", day);
     localStorage.setItem("startTime", startTime);
     localStorage.setItem("user", user);
-    modalRef.current?.classList.replace("hidden", "flex");
-    modalRef.current?.showModal();
+    if (sessions.length >= 3) {
+      setSessionWaningVisibility(true)
+    }
+    else {
+      modalRef.current?.classList.replace("hidden", "flex");
+      // Highlight the first input
+      let input:HTMLInputElement = document.querySelector('dialog input')!
+      console.log(input)
+      input.focus()
+    }
   }
 
   return (
@@ -88,6 +98,9 @@ export default function Agenda() {
 
         </ModalContext>
       </SemanaContext>
+      <StudentSizeModal visible={sessionWaningVisibility} setVisibility={setSessionWaningVisibility} modal={modalRef.current!}>
+
+      </StudentSizeModal>
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );

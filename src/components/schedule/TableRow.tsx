@@ -33,7 +33,7 @@ export function TableRow({ startTime, endTime }) {
     if (startTime != '18h') {
       return (
         <>
-          <td className="select-none text-center bg-amber-100 py-2 px-2 font-semibold">{getSaturdayStartTime(startTime)} até {getSaturdayEndTime(endTime)}</td>
+          <td className="select-none text-center bg-lime-100 py-2 px-2 font-semibold">{getSaturdayStartTime(startTime)} até {getSaturdayEndTime(endTime)}</td>
           <RowData key={6} day={6} startTime={getSaturdayStartTime(startTime)} />
         </>
       )
@@ -41,7 +41,7 @@ export function TableRow({ startTime, endTime }) {
   }
   return (
     <tr className="text-base text-left border-b border-gray-200 even:bg-gray-50 hover:bg-gray-100 transition-all">
-      <td className="select-none text-center bg-amber-100 py-2 px-2 font-semibold">{startTime} até {endTime}</td>
+      <td className="select-none text-center bg-lime-100 py-2 px-2 font-semibold">{startTime} até {endTime}</td>
       {[1, 2, 3, 4, 5].map(day => (
           <RowData key={day} day={day} startTime={startTime} />
         ))}
@@ -53,7 +53,7 @@ export function TableRow({ startTime, endTime }) {
 
 function RowData({ day, startTime }) {
   const semanaContext = useContext(SemanaContext);
-  const [background, setBackground] = useState('bg-red-300')
+  const [background, setBackground] = useState('bg-neutral-300')
   function verifySession(agendamento: Agendamento) {
     return (
       agendamento.data.getDay() === day &&
@@ -67,7 +67,7 @@ function RowData({ day, startTime }) {
       setBackground('')
       return (
         <button
-          onClick={() => showRegisterModal(day, startTime)}
+          onClick={() => showRegisterModal(day, startTime,sessions)}
           className="mt-1 w-full px-2 py-1 bg-blue-50 text-blue-800 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100"
         >
           Agendar Aluno
@@ -110,9 +110,9 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
     case "Escolar": bgColor = "bg-rose-100"; break;
     case "Revisão": bgColor = "bg-green-100"; break;
     case "Reposição": bgColor = "bg-purple-100"; break;
-    case "Final Test": bgColor = "bg-cyan-300"; break;
-    case "Midterm Test": bgColor = "bg-cyan-100"; break;
-    case "Online": bgColor = "bg-blue-100"; break;
+    case "Final Test": bgColor = "bg-cyan-200"; break;
+    case "Midterm Test": bgColor = "bg-cyan-200"; break;
+    case "Online": bgColor = "bg-blue-300"; break;
     case "Homework": bgColor = "bg-amber-100"; break;
     default: bgColor = "bg-amber-200"; break;
   }

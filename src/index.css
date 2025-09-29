@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+@theme {
+    --animate-scaleUp: scaleUp 0.5s ease-in-out forwards;
+
+    keyframes scaleUp {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+}
+
+.animate-scaleUp {
+    animation: var(--animate-scaleUp);
+}

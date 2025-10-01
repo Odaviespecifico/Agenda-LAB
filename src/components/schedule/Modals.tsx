@@ -6,9 +6,11 @@ import { addSession } from "../../firebase.js";
 export function RegisterStudentModal({ ref, scheduleDate }) {
   let semanaContext = useContext(SemanaContext);
   let formRef = useRef(null);
+  let estagioRef = useRef<HTMLInputElement|null>(null)
   let [day, setDay] = useState<string | null>("testando");
   let [time, setTime] = useState<string | null>("testando");
   let [fixo, setFixo] = useState(false)
+  let [filter, setFilter] = useState<string>('NOTHING')
   useEffect(() => {
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener('keydown', handleEsc)
@@ -182,6 +184,25 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     }
   }
 
+  function renderEstagios() {
+    let estagios = ['Yard 1a', 'Yard 1b', 'Yard 2a', 'Yard 2b', 'Garden 1', 'Garden 2', 'Garden 3', 'Garden 4', 'Fun 1', 'Fun 2', 'Fun 3', 'Fun 4', 'Kids 1', 'Kids 2', 'Kids 3', 'Kids 4','Teen up 1', 'Teen up 2', 'Teen up 3', 'Teen up 4', 'Teen up 5', 'Teen up 6',
+      'Essentials 1', 'Essentials 2', 'Progression 1', 'Progression 2', 'Expansion 1', 'Expansion 2', 'Gold 1', 'Gold 2', 'Platinum 1', 'Platinum 2', 'Fly 1', 'Fly 2'
+    ]
+    console.log(estagios.includes(filter))
+    if (filter != '' && !estagios.includes(filter)) {
+      return(
+        estagios.filter((estagio) => estagio.toLowerCase().indexOf(filter) != -1).slice(0,4).map((estagio) => {
+          return <button className="hover:bg-neutral-200 active:neutral-300 transition-all" onClick={() => {estagioRef.current!.value = estagio
+            setFilter(estagio)
+          }}>{estagio}</button>
+        })
+      )
+    }
+    else {
+      return ('')
+    }
+  }
+
   function optionsFixo() {
     if(fixo) {
       return(
@@ -235,14 +256,20 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
       />
     </div>
 
-    <div className="flex flex-col gap-2">
+    <div className="flex relative flex-col gap-2">
       <label htmlFor="estágio" className="font-medium">Estágio:</label>
       <input
         type="text"
         name="estágio"
         required
-        className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
+        autoComplete="off"
+        ref={estagioRef}
+        onInput={() => {setFilter(estagioRef.current!.value)}}
+        className="peer border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
       />
+      <div className={"flex flex-col absolute top-19 bg-white text-xl w-full border-0 border-t-0 peer-focus:border-1 shadow-lg"}>
+        {renderEstagios()}
+      </div>
     </div>
 
     <div className="flex flex-col gap-2">

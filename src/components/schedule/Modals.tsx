@@ -188,10 +188,9 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     let estagios = ['Yard 1a', 'Yard 1b', 'Yard 2a', 'Yard 2b', 'Garden 1', 'Garden 2', 'Garden 3', 'Garden 4', 'Fun 1', 'Fun 2', 'Fun 3', 'Fun 4', 'Kids 1', 'Kids 2', 'Kids 3', 'Kids 4','Teen up 1', 'Teen up 2', 'Teen up 3', 'Teen up 4', 'Teen up 5', 'Teen up 6',
       'Essentials 1', 'Essentials 2', 'Progression 1', 'Progression 2', 'Expansion 1', 'Expansion 2', 'Gold 1', 'Gold 2', 'Platinum 1', 'Platinum 2', 'Fly 1', 'Fly 2'
     ]
-    console.log(estagios.includes(filter))
     if (filter != '' && !estagios.includes(filter)) {
       return(
-        estagios.filter((estagio) => estagio.toLowerCase().indexOf(filter) != -1).slice(0,4).map((estagio) => {
+        estagios.filter((estagio) => estagio.toLowerCase().indexOf(filter.toLowerCase()) != -1).slice(0,5).map((estagio) => {
           return <button className="hover:bg-neutral-200 active:neutral-300 transition-all" onClick={() => {estagioRef.current!.value = estagio
             setFilter(estagio)
           }}>{estagio}</button>

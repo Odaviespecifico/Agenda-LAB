@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { Semana, Agendamento } from "./Utils.js";
 import { ModalContext, SemanaContext } from "../../Agenda.js";
 import { deletefromDB } from "../../firebase.js";
-
+import { Pencil } from "lucide-react";
 export function TableRow({ startTime, endTime }) {
   function getSaturdayStartTime(startTime) {
     switch (startTime) {
@@ -119,7 +119,7 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
 
   return (
     <div
-      className={`${bgColor} relative rounded-lg p-2 shadow-sm hover:shadow-md transition-all  cursor-pointer`}
+      className={`${bgColor} relative rounded-lg p-2 shadow-sm hover:shadow-md transition-all  cursor-pointer ${agendamento.fixo ? 'border-2' : ''}`}
     >
       <div className="overflow-x-hidden hover:overflow-x-auto peer">
         <b>Aluno {agendamento.fixo ? "fixo" : ""}:</b> {agendamento.nome} <br />
@@ -133,6 +133,13 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
         className="absolute top-1 right-1 w-4 h-4 p-0.5 rounded-full bg-red-100 opacity-0 peer-hover:opacity-100 hover:bg-red-300 hover:opacity-100  cursor-pointer transition"
         onClick={handleCloseClick}
       />
+      <span className="absolute flex items-center justify-center top-1 right-6 w-4 h-4 p-0.5 rounded-full bg-green-100 opacity-0 peer-hover:opacity-100 hover:bg-green-300 hover:opacity-100  cursor-pointer transition">
+        <Pencil
+        size={10}
+        className=""
+        strokeWidth={2} />
+      </span>
+      
     </div>
   );
 }

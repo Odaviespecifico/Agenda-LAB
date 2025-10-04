@@ -191,7 +191,7 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     if (filter != '' && !estagios.includes(filter)) {
       return(
         estagios.filter((estagio) => estagio.toLowerCase().indexOf(filter.toLowerCase()) != -1).slice(0,5).map((estagio) => {
-          return <button className="hover:bg-neutral-200 active:neutral-300 transition-all" onClick={() => {estagioRef.current!.value = estagio
+          return <button type="button" className="hover:bg-neutral-200 active:neutral-300 transition-all" onClick={() => {estagioRef.current!.value = estagio
             setFilter(estagio)
           }}>{estagio}</button>
         })
@@ -382,8 +382,8 @@ export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
     refs.estagio.current!.value = agendamento.estágio
     refs.tipo.current!.value = agendamento.tipo
     refs.detalhes.current!.value = agendamento.conteúdo
-    refs.horario.current!.value = `${agendamento.data.getHours()}:${(agendamento.data.getMinutes().toString.length == 1 ? '0' + agendamento.data.getMinutes() : agendamento.data.getMinutes())}`
-    refs.date.current!.value = `${agendamento.data.getFullYear()}-${((agendamento.data.getMonth() + 1).toString.length == 1) ? '0' + (agendamento.data.getMonth() + 1) : (agendamento.data.getMonth() + 1)}-${(agendamento.data.getDate().toString.length == 1) ? '0' + agendamento.data.getDate() : agendamento.data.getDate()}`
+    refs.horario.current!.value = `${agendamento.data.getHours()}:${(agendamento.data.getMinutes().toString().length == 1 ? '0' + agendamento.data.getMinutes() : agendamento.data.getMinutes())}`
+    refs.date.current!.value = `${agendamento.data.getFullYear()}-${((agendamento.data.getMonth() + 1).toString().length == 1) ? '0' + (agendamento.data.getMonth() + 1) : (agendamento.data.getMonth() + 1)}-${(agendamento.data.getDate().toString().length == 1) ? '0' + agendamento.data.getDate() : agendamento.data.getDate()}`
     document.addEventListener("keydown", (e) => {
       if (e.key == "Escape") {
         modalContext.setModalUpdateSchedule()
@@ -399,7 +399,7 @@ export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
     if (filter != '' && !estagios.includes(filter)) {
       return(
         estagios.filter((estagio) => estagio.toLowerCase().indexOf(filter.toLowerCase()) != -1).slice(0,5).map((estagio) => {
-          return <button className="hover:bg-neutral-200 active:neutral-300 transition-all" onClick={() => {estagioRef.current!.value = estagio
+          return <button type="button" className="hover:bg-neutral-200 active:neutral-300 transition-all" onClick={() => {refs.estagio.current!.value = estagio
             setFilter(estagio)
           }}>{estagio}</button>
         })

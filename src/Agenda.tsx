@@ -11,7 +11,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { addSession, getSessions, listenToChancesInDB, deletefromDB, signInWithGoogle } from "./firebase.js";
 import { Header, Footer, Semana, Agendamento } from "./components/schedule/Utils.js";
 import { ScheduleTable } from "./components/schedule/ScheduleTable.js";
-import { RegisterStudentModal, StudentSizeModal } from "./components/schedule/Modals.js";
+import { RegisterStudentModal, StudentSizeModal, ModalUpdateStudent } from "./components/schedule/Modals.js";
 import { getAuth, onAuthStateChanged,} from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -26,6 +26,14 @@ export const ModalContext = createContext<any>(undefined);
 export default function Agenda() {
   const navigate = useNavigate()
   const auth = getAuth()
+  
+  let [sessionWaningVisibility, setSessionWaningVisibility] = useState(false)
+  let [modalUpdateSchedule, setModalUpdateSchedule] = useState<Agendamento|null>(null)
+  let [user, setUser] = useState('');
+  let [scheduleDate, setScheduleDate] = useState(Date);
+  let [semana, setSemana] = useState(new Semana([]));
+  let modalRef = useRef<HTMLDialogElement | null>(null);
+  
   onAuthStateChanged(auth, (user) => {
     if (user) {
     // console.log(user.email)
@@ -40,13 +48,6 @@ export default function Agenda() {
     navigate('/')
   }
 });
-
-  let [sessionWaningVisibility, setSessionWaningVisibility] = useState(false)
-  let [user, setUser] = useState('');
-  let [scheduleDate, setScheduleDate] = useState(Date);
-  let [semana, setSemana] = useState(new Semana([]));
-  let modalRef = useRef<HTMLDialogElement | null>(null);
-
   // If no date is in the URL
   useEffect(() => {
     let URLParans = new URLSearchParams(window.location.search)
@@ -84,25 +85,33 @@ export default function Agenda() {
     }
   }
 
+
+  function renderUpdateModal() {
+    if (modalUpdateSchedule) {
+      return (
+        <ModalUpdateStudent agendamento={modalUpdateSchedule}/>
+      )
+    }
+  }
+
   return (
     <div className="w-full h-dvh flex flex-col">
       <Header user={user} setUser={setUser}></Header>
       <SemanaContext value={SemanaContextValue}>
-        <ModalContext value={{ showRegisterModal }}>
-
+        <ModalContext value={ {showRegisterModal,
+                              setModalUpdateSchedule}}>
           <ScheduleTable></ScheduleTable>
           <Footer></Footer>
           <RegisterStudentModal
             ref={modalRef}
             scheduleDate={scheduleDate}
             />
-
-        </ModalContext>
-      </SemanaContext>
-      <StudentSizeModal visible={sessionWaningVisibility} setVisibility={setSessionWaningVisibility} modal={modalRef.current!}>
-
-      </StudentSizeModal>
+      <StudentSizeModal visible={sessionWaningVisibility} setVisibility={setSessionWaningVisibility} modal={modalRef.current!}/>
+      {modalUpdateSchedule ? <ModalUpdateStudent agendamento={modalUpdateSchedule}/> : ''}
       <ToastContainer position="top-right" autoClose={3000} />
+      
+      </ModalContext>
+      </SemanaContext>
     </div>
   );
 }

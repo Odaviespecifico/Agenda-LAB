@@ -1,6 +1,7 @@
 import { TableRow } from "./TableRow.js";
-import { getDate } from "./Utils.js";
-
+import { Agendamento, getDate } from "./Utils.js";
+import { ModalUpdateStudent } from "./Modals.js";
+import { useEffect, useState } from "react";
 export function ScheduleTable() {
   return (
     <div className="h-full overflow-y-auto p-2">

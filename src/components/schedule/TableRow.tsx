@@ -53,7 +53,8 @@ export function TableRow({ startTime, endTime }) {
 
 function RowData({ day, startTime }) {
   const semanaContext = useContext(SemanaContext);
-  const [background, setBackground] = useState('bg-neutral-300')
+  const modalContext = useContext(ModalContext);
+  const backgroundClass = (startTime != '18h' || day == 1 || day == 3) ? '' : 'bg-neutral-300';
   function verifySession(agendamento: Agendamento) {
     return (
       agendamento.data.getDay() === day &&
@@ -62,13 +63,12 @@ function RowData({ day, startTime }) {
   }
 
   const sessions = semanaContext?.semana.agendamentos.filter(verifySession) || [];
-  function renderScheduleButton(showRegisterModal) {
+  function renderScheduleButton() {
     if (startTime != '18h' || day == 1 || day == 3) {
-      setBackground('')
       return (
         <button
-          onClick={() => showRegisterModal(day, startTime,sessions)}
-          className="mt-1 w-full px-2 py-1 bg-blue-50 text-blue-800 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100"
+        onClick={() => modalContext.showRegisterModal(day, startTime,sessions)}
+        className="mt-1 w-full px-2 py-1 bg-blue-50 text-blue-800 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100"
         >
           Agendar Aluno
         </button>
@@ -76,15 +76,12 @@ function RowData({ day, startTime }) {
     }
   }
   return (
-    <td className={background + " group relative border-l border-gray-200 align-top px-1 py-1"}>
+    <td className={backgroundClass + " group relative border-l border-gray-200 align-top px-1 py-1"}>
       <div className="flex flex-col gap-1">
         {sessions.map((agendamento, idx) => (
           <Session key={idx} agendamento={agendamento} />
         ))}
-
-        <ModalContext.Consumer>
-          {({ showRegisterModal }) => (renderScheduleButton(showRegisterModal))}
-        </ModalContext.Consumer>
+          {renderScheduleButton()}
       </div>
     </td>
   );
@@ -92,7 +89,8 @@ function RowData({ day, startTime }) {
 
 function Session({ agendamento }: { agendamento: Agendamento }) {
   const semanaContext = useContext(SemanaContext);
-
+  const modalContext = useContext(ModalContext);
+  
   const handleCloseClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const confirm = prompt(
@@ -133,11 +131,13 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
         className="absolute top-1 right-1 w-4 h-4 p-0.5 rounded-full bg-red-100 opacity-0 peer-hover:opacity-100 hover:bg-red-300 hover:opacity-100  cursor-pointer transition"
         onClick={handleCloseClick}
       />
-      <span className="absolute flex items-center justify-center top-1 right-6 w-4 h-4 p-0.5 rounded-full bg-green-100 opacity-0 peer-hover:opacity-100 hover:bg-green-300 hover:opacity-100  cursor-pointer transition">
+      <span className="absolute flex items-center justify-center top-1 right-6 w-4 h-4 p-0.5 rounded-full bg-green-100 opacity-0 peer-hover:opacity-100 hover:bg-green-300 hover:opacity-100  cursor-pointer transition"
+      onClick={() => {modalContext.setModalUpdateSchedule(agendamento)}}>
         <Pencil
         size={10}
         className=""
-        strokeWidth={2} />
+        strokeWidth={2}
+        />
       </span>
       
     </div>

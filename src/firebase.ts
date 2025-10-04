@@ -10,6 +10,7 @@ import {
   getDoc,
   or,
   and,
+  updateDoc,
 } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { Agendamento, Semana, getDate } from "./components/schedule/Utils.js";
@@ -371,5 +372,49 @@ export async function signInWithGoogle() {
 
     console.error("Error during Google sign-in:", errorMessage, errorCode, email, credential);
     throw error; // Re-throw the error or handle it gracefully
+  }
+}
+
+export async function updateSchedule(agendamento:Agendamento, novoAgendamento:Agendamento, inicioFixo:Date|null=null, fimFixo:Date|null=null) {
+  let toastloading = toast.loading("Atualizando o agendamento")
+  console.log(agendamento)
+  console.log(novoAgendamento)
+  let q = query(collection(db,"agendamentos"), where('data', '==', Timestamp.fromDate(agendamento.data)), where("nome", '==', agendamento.nome), where("estágio", '==', agendamento.estágio))
+  try {
+    const querySnapshot = getDocs(q)
+    ;(await querySnapshot).forEach(async (doc) => {
+      await updateDoc(doc.ref, {
+        'conteúdo': novoAgendamento.conteúdo, 
+        'estágio': novoAgendamento.estágio, 
+        'data': Timestamp.fromDate(novoAgendamento.data),
+        'horario': `${novoAgendamento.data.getHours()}:${(novoAgendamento.data.getMinutes().toString.length == 1 ? '0' + novoAgendamento.data.getMinutes() : novoAgendamento.data.getMinutes())}`,
+        'nome': novoAgendamento.nome,
+        'tipo': novoAgendamento.tipo,
+      })
+      if (agendamento.fixo) {
+        await updateDoc(doc.ref, {
+          'inicioFixo': Timestamp.fromDate(inicioFixo!),
+          'fimFixo': Timestamp.fromDate(fimFixo!),
+        })
+      }
+      console.log("Updated document with ID: " + doc.id)
+    })
+    toast.update(toastloading, {
+      render: 'Agendamento atualizado',
+      isLoading: false,
+      type: 'success',
+      autoClose: 1500
+    })
+    return true
+  }
+  catch (error) {
+    console.error("Erro atualizando documento: ", error);
+    toast.update(toastloading, {
+      render: 'Ocorreu um erro ao atualizar o agendamento',
+      isLoading: false,
+      type: 'error',
+      autoClose: 1500
+    })
+    return false
   }
 }

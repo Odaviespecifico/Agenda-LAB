@@ -33,15 +33,15 @@ export function TableRow({ startTime, endTime }) {
     if (startTime != '18h') {
       return (
         <>
-          <td className="select-none text-center bg-lime-100 py-2 px-2 font-semibold">{getSaturdayStartTime(startTime)} até {getSaturdayEndTime(endTime)}</td>
+          <td className="select-none text-center bg-lime-100 py-2 px-2 font-semibold group-hover/table:bg-lime-200 transition-all">{getSaturdayStartTime(startTime)} até {getSaturdayEndTime(endTime)}</td>
           <RowData key={6} day={6} startTime={getSaturdayStartTime(startTime)} />
         </>
       )
     }
   }
   return (
-    <tr className="text-base text-left border-b border-gray-200 even:bg-gray-50 hover:bg-gray-100 transition-all">
-      <td className="select-none text-center bg-lime-100 py-2 px-2 font-semibold">{startTime} até {endTime}</td>
+    <tr className="group/table text-base text-left border-b border-gray-200 even:bg-gray-50 hover:bg-gray-100 transition-all">
+      <td className="select-none text-center bg-lime-100 group-hover/table:bg-lime-200 py-2 px-2 font-semibold transition-all">{startTime} até {endTime}</td>
       {[1, 2, 3, 4, 5].map(day => (
           <RowData key={day} day={day} startTime={startTime} />
         ))}
@@ -139,6 +139,12 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
         strokeWidth={2}
         />
       </span>
+      {/* <img
+        src="./closeX.svg"
+        alt="Remover"
+        className="absolute bottom-1 right-1 w-4 h-4 p-0.5 rounded-full bg-red-100 opacity-0 peer-hover:opacity-100 hover:bg-red-300 hover:opacity-100  cursor-pointer transition"
+        onClick={handleCloseClick}
+      /> */}
       
     </div>
   );

@@ -117,7 +117,7 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
 
   return (
     <div
-      className={`${bgColor} relative rounded-lg p-2 shadow-sm hover:shadow-md transition-all  cursor-pointer ${agendamento.fixo ? 'border-2' : ''}`}
+      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all  cursor-pointer ${agendamento.fixo ? 'border-2' : ''}`}
     >
       <div className="overflow-x-hidden hover:overflow-x-auto peer">
         <b>Aluno {agendamento.fixo ? "fixo" : ""}:</b> {agendamento.nome} <br />
@@ -139,12 +139,17 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
         strokeWidth={2}
         />
       </span>
-      {/* <img
-        src="./closeX.svg"
-        alt="Remover"
-        className="absolute bottom-1 right-1 w-4 h-4 p-0.5 rounded-full bg-red-100 opacity-0 peer-hover:opacity-100 hover:bg-red-300 hover:opacity-100  cursor-pointer transition"
-        onClick={handleCloseClick}
-      /> */}
+      <span
+        className="absolute flex items-center select-none justify-center bottom-1 right-1 w-5 h-5 p-0.5 rounded-full bg-blue-100 opacity-0 peer-hover:opacity-100 hover:bg-blue-300 hover:opacity-100  cursor-pointer transition"
+        onClick={(e) => {
+          const order = ['','P','F']
+          const target = e.target as HTMLSpanElement
+          const index = order.find
+          console.log(target.innerText)
+        }}
+      >
+        P
+      </span>
       
     </div>
   );

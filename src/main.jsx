@@ -9,8 +9,9 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
     <Routes>
-      <Route path='/' element={<Auth />}/>        
+      <Route path='/auth' element={<Auth />}/>        
       <Route path='/agenda' element={<Agenda />}/>        
+      <Route path='/' element={<Agenda />}/>        
       <Route path='/authWrongEmail' element={<AuthException />}/>        
     </Routes>
     </BrowserRouter>

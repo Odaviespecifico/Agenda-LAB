@@ -45,11 +45,12 @@ export default function Agenda() {
     setUser(userName)
   } else {
     console.log("User is signed out.");
-    navigate('/')
+    navigate('/auth')
   }
 });
   // If no date is in the URL
   useEffect(() => {
+    console.log(auth.currentUser)
     let URLParans = new URLSearchParams(window.location.search)
       .get("date")
       ?.replaceAll("-", "/");

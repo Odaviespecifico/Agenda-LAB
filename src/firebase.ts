@@ -341,7 +341,7 @@ export async function deletefromDB(agendamento:Agendamento) {
 }
 
 // Initialize Firebase Authentication and get a reference to the service
-const auth = getAuth(app);
+export const auth = getAuth(app);
 
 // 3. Create an asynchronous function to handle Google sign-in
 export async function signInWithGoogle() {

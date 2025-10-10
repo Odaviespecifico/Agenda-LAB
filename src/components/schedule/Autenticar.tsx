@@ -1,12 +1,17 @@
 import { Header } from "./Utils.js";
 import { signInWithGoogle } from "../../firebase.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../../firebase.js";
+import { getAuth } from "firebase/auth";
 
 export function Auth() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    console.log(getAuth().currentUser)
+  })
   async function handleLogin() {
     try {
       setLoading(true);

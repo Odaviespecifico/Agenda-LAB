@@ -217,11 +217,10 @@ export function listenToChancesInDB(setterFunction: Function) {
     // Update the cache for fixed appointments
     fixedAgendamentosCache.clear(); // Clear previous results for this query
     snapshot.forEach((doc) => {
-      console.log(doc.data())
       fixedAgendamentosCache.set(doc.id, new Agendamento(
         doc.data().nome, doc.data().estágio, doc.data().tipo,
         doc.data().conteúdo, doc.data().responsável,
-        new Date(doc.data().data.seconds * 1000),true
+        new Date(doc.data().data.seconds * 1000),true,'',doc.id
       ));
     });
 
@@ -244,11 +243,11 @@ export function listenToChancesInDB(setterFunction: Function) {
     }
     regularAgendamentosCache.clear(); 
     snapshot.forEach((doc) => {
+      let id = doc.id
       regularAgendamentosCache.set(doc.id, new Agendamento(
         doc.data().nome, doc.data().estágio, doc.data().tipo,
         doc.data().conteúdo, doc.data().responsável,
-        new Date(doc.data().data.seconds * 1000)
-      ));
+        new Date(doc.data().data.seconds * 1000), false, doc.data().status, id));
     });
 
     regularQueryInitialLoadComplete = true;
@@ -417,4 +416,14 @@ export async function updateSchedule(agendamento:Agendamento, novoAgendamento:Ag
     })
     return false
   }
+}
+
+export async function setScheduleStatus(status, id) {
+  const documentRef = doc(db,'agendamentos',id)
+  if (!status) {
+    status = ''
+  }
+  await updateDoc(documentRef,{
+    status: status
+  })
 }

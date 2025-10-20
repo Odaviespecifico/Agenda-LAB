@@ -42,15 +42,19 @@ export class Agendamento {
   responsável: string;
   data: Date;
   fixo?: boolean;
+  status?: 'Presente' | 'Atrasado' | 'Faltou' | '';
+  id?: string;
 
-  constructor(nome, estágio, tipo, conteúdo, responsável, data, fixo?) {
+  constructor(nome, estágio, tipo, conteúdo, responsável, data, fixo?, status?, id?) {
     this.nome = nome;
     this.estágio = estágio;
     this.tipo = tipo;
     this.conteúdo = conteúdo;
     this.responsável = responsável;
     this.data = data;
-    this.fixo = fixo
+    this.fixo = fixo;
+    this.status = status;
+    this.id = id;
   }
 }
 

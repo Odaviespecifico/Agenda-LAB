@@ -3,6 +3,7 @@ import { Semana, Agendamento } from "./Utils.js";
 import { ModalContext, SemanaContext } from "../../Agenda.js";
 import { deletefromDB } from "../../firebase.js";
 import { Pencil } from "lucide-react";
+import { setScheduleStatus } from "../../firebase.js";
 export function TableRow({ startTime, endTime }) {
   function getSaturdayStartTime(startTime) {
     switch (startTime) {
@@ -90,7 +91,13 @@ function RowData({ day, startTime }) {
 function Session({ agendamento }: { agendamento: Agendamento }) {
   const semanaContext = useContext(SemanaContext);
   const modalContext = useContext(ModalContext);
-  
+  const statusMap = {
+    '': '',
+    'Presente': 'P',
+    'Atrasado': 'A',
+    'Faltou': 'F'
+  }
+  const [status, setStatus] = useState(agendamento.status ? statusMap[agendamento.status] : '')
   const handleCloseClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const confirm = prompt(
@@ -115,15 +122,29 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
     default: bgColor = "bg-amber-200"; break;
   }
 
+  function statusStyle(status:'Presente' | 'Atrasado' | 'Faltou' | '' = '') {
+    switch (status) {
+      case "Presente":
+        return('opacity-30')
+      case "Atrasado":
+        return('opacity-30 underline')
+      case "Faltou":
+        return('opacity-30 line-through')
+      default:
+        return('')
+    }
+  }
   return (
     <div
-      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all  cursor-pointer ${agendamento.fixo ? 'border-2' : ''}`}
+      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all cursor-pointer ${agendamento.fixo ? 'border-2' : ''}  ${statusStyle(agendamento.status)}`}
     >
       <div className="overflow-x-hidden hover:overflow-x-auto peer">
-        <b>Aluno {agendamento.fixo ? "fixo" : ""}:</b> {agendamento.nome} <br />
-        <b>Estágio:</b> {agendamento.estágio} <br />
-        <b>{agendamento.tipo}</b> - {agendamento.conteúdo} <br />
-        <b>Responsável:</b> {agendamento.responsável}
+        <span>
+          <b>Aluno {agendamento.fixo ? "fixo" : ""}:</b> {agendamento.nome} <br />
+          <b>Estágio:</b> {agendamento.estágio} <br />
+          <b>{agendamento.tipo}</b> - {agendamento.conteúdo} <br />
+          <b>Responsável:</b> {agendamento.responsável}
+        </span>
       </div>
       <img
         src="./closeX.svg"
@@ -142,13 +163,17 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
       <span
         className="absolute flex items-center select-none justify-center bottom-1 right-1 w-5 h-5 p-0.5 rounded-full bg-blue-100 opacity-0 peer-hover:opacity-100 hover:bg-blue-300 hover:opacity-100  cursor-pointer transition"
         onClick={(e) => {
-          const order = ['','P','F']
+          const order = ['','P','A','F']
           const target = e.target as HTMLSpanElement
-          const index = order.find
-          console.log(target.innerText)
+          let index = order.indexOf(target.innerText)
+          if (index > 2) {index = -1}
+          target.innerText = order[index+1]!
+          setStatus(order[index+1]!)
+          let status = ['', 'Presente', 'Atrasado', 'Faltou']
+          setScheduleStatus(status[index+1],agendamento.id)
         }}
       >
-        P
+        {status}
       </span>
       
     </div>

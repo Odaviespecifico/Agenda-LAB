@@ -11,6 +11,8 @@ import {
   or,
   and,
   updateDoc,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { Agendamento, Semana, getDate } from "./components/schedule/Utils.js";
@@ -193,7 +195,6 @@ export function listenToChancesInDB(setterFunction: Function) {
 
   const weekMiliseconds = 7 * 24 * 60 * 60 * 1000;
   const date = getDate('0', 'date') as Date;
-  console.log(date)
   const dateNextWeek = new Date(date.getTime() + weekMiliseconds);
 
   const qFixo = query(collection(db, "agendamentos"),
@@ -214,16 +215,19 @@ export function listenToChancesInDB(setterFunction: Function) {
       initialLoadIsFromCache = true;
     }
 
+    //TODO ajust here to get the status from the DB
+    
+
     // Update the cache for fixed appointments
     fixedAgendamentosCache.clear(); // Clear previous results for this query
     snapshot.forEach((doc) => {
+      const presencas = doc.data().presencas as Array<{data:Timestamp;status:string}>
       fixedAgendamentosCache.set(doc.id, new Agendamento(
         doc.data().nome, doc.data().estágio, doc.data().tipo,
         doc.data().conteúdo, doc.data().responsável,
-        new Date(doc.data().data.seconds * 1000),true,'',doc.id
+        new Date(doc.data().data.seconds * 1000),true,'',doc.id,presencas
       ));
     });
-
     fixedQueryInitialLoadComplete = true;
     processAndSetMergedData(setterFunction); // Trigger the merge and update UI
   }, (error) => {
@@ -425,5 +429,22 @@ export async function setScheduleStatus(status, id) {
   }
   await updateDoc(documentRef,{
     status: status
+  })
+}
+
+export async function setScheduleStatusFixo(status,dateTime,agendamento:Agendamento) {
+  console.log('Atualizando status')
+  const documentRef = doc(db,'agendamentos',agendamento.id!)
+  const newStatus = {data:dateTime,status:status}
+  agendamento.presenças?.forEach(async (presencas) => {
+    if (presencas.data.isEqual(dateTime)) {
+      const removeStatus = {data:dateTime, status:presencas.status}
+      await updateDoc(documentRef, {
+        presencas: arrayRemove(removeStatus)
+      })
+    }
+  })
+  await updateDoc(documentRef,{
+    presencas: arrayUnion(newStatus)
   })
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { signOut,getAuth } from "firebase/auth";
+import type { Timestamp } from "firebase/firestore";
 
 export function Header({ user, setUser }) {
     async function handleLogout() {
@@ -44,8 +45,9 @@ export class Agendamento {
   fixo?: boolean;
   status?: 'Presente' | 'Atrasado' | 'Faltou' | '';
   id?: string;
+  presenças?: Array<{data:Timestamp,status:'Presente' | 'Atrasado' | 'Faltou' | ''}>;
 
-  constructor(nome, estágio, tipo, conteúdo, responsável, data, fixo?, status?, id?) {
+  constructor(nome, estágio, tipo, conteúdo, responsável, data, fixo?, status?, id?,presenças?) {
     this.nome = nome;
     this.estágio = estágio;
     this.tipo = tipo;
@@ -55,6 +57,7 @@ export class Agendamento {
     this.fixo = fixo;
     this.status = status;
     this.id = id;
+    this.presenças = presenças
   }
 }
 
@@ -125,7 +128,7 @@ export function Footer() {
 
 /**Retorna a data dentro de uma semana de acordo com o URL
  * @param dayIndex O dia da semana (Segunda-feira é 1)
- * @returns A data no formato DD/MM da semana (De acordo com o indice do dia. ) */
+ * @returns A data no formato DD/MM da semana (De acordo com o indice do dia. ) ou um objeto de Data*/
 export function getDate(
   dayIndex,
   returnType: "string" | "date" = "string"

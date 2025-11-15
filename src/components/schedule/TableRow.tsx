@@ -1,9 +1,10 @@
-import { useContext, useState } from "react";
-import { Semana, Agendamento } from "./Utils.js";
+import { useContext, useEffect, useState } from "react";
+import { Semana, Agendamento, getDate } from "./Utils.js";
 import { ModalContext, SemanaContext } from "../../Agenda.js";
-import { deletefromDB } from "../../firebase.js";
+import { deletefromDB, setScheduleStatusFixo } from "../../firebase.js";
 import { Pencil } from "lucide-react";
 import { setScheduleStatus } from "../../firebase.js";
+import { Timestamp } from "firebase/firestore";
 export function TableRow({ startTime, endTime }) {
   function getSaturdayStartTime(startTime) {
     switch (startTime) {
@@ -80,7 +81,7 @@ function RowData({ day, startTime }) {
     <td className={backgroundClass + " group relative border-l border-gray-200 align-top px-1 py-1"}>
       <div className="flex flex-col gap-1">
         {sessions.map((agendamento, idx) => (
-          <Session key={idx} agendamento={agendamento} />
+          <Session key={idx} agendamento={agendamento} day={day} />
         ))}
           {renderScheduleButton()}
       </div>
@@ -88,7 +89,25 @@ function RowData({ day, startTime }) {
   );
 }
 
-function Session({ agendamento }: { agendamento: Agendamento }) {
+function Session({ agendamento, day }: { agendamento: Agendamento, day:Number }) {
+  useEffect(() => {
+    console.log('Usando effect')
+    if (agendamento.presenças) {
+      const dataSessão = new Date(getDate(day,'date'))
+      dataSessão.setHours(agendamento.data.getHours())
+      dataSessão.setMinutes(agendamento.data.getMinutes())
+      dataSessão.setSeconds(0,0)
+      agendamento.presenças.filter((agendamentoPresenças) => {
+        let dataAgendamento = agendamentoPresenças.data.toDate();
+        dataAgendamento.setSeconds(0)
+        dataAgendamento.setMilliseconds(0)
+        if (dataAgendamento.getTime() == dataSessão.getTime()) {
+          agendamento.status = agendamentoPresenças.status
+        }
+      })
+      setStatus(agendamento.status ? statusMap[agendamento.status] : '')
+    }
+  },[])
   const semanaContext = useContext(SemanaContext);
   const modalContext = useContext(ModalContext);
   const statusMap = {
@@ -122,13 +141,13 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
     default: bgColor = "bg-amber-200"; break;
   }
 
-  function statusStyle(status:'Presente' | 'Atrasado' | 'Faltou' | '' = '') {
+  function statusStyle(status:'P' | 'A' | 'F' | '' = '') {
     switch (status) {
-      case "Presente":
+      case "P":
         return('opacity-30')
-      case "Atrasado":
+      case "A":
         return('opacity-30 underline')
-      case "Faltou":
+      case "F":
         return('opacity-30 line-through')
       default:
         return('')
@@ -136,7 +155,7 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
   }
   return (
     <div
-      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all cursor-pointer ${agendamento.fixo ? 'border-2' : ''}  ${statusStyle(agendamento.status)}`}
+      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all cursor-pointer ${agendamento.fixo ? 'border-2' : ''}  ${statusStyle(status as 'P' | 'A' | 'F' | '')}`}
     >
       <div className="overflow-x-hidden hover:overflow-x-auto peer">
         <span>
@@ -162,16 +181,29 @@ function Session({ agendamento }: { agendamento: Agendamento }) {
       </span>
       <span
         className="absolute flex items-center select-none justify-center bottom-1 right-1 w-5 h-5 p-0.5 rounded-full bg-blue-100 opacity-0 peer-hover:opacity-100 hover:bg-blue-300 hover:opacity-100  cursor-pointer transition"
-        onClick={(e) => {
-          const order = ['','P','A','F']
-          const target = e.target as HTMLSpanElement
-          let index = order.indexOf(target.innerText)
-          if (index > 2) {index = -1}
-          target.innerText = order[index+1]!
-          setStatus(order[index+1]!)
-          let status = ['', 'Presente', 'Atrasado', 'Faltou']
-          setScheduleStatus(status[index+1],agendamento.id)
-        }}
+        onClick={async (e) => {
+            const order = ['','P','A','F']
+            const target = e.target as HTMLSpanElement
+            let index = order.indexOf(target.innerText)
+            if (index > 2) {index = -1}
+            target.innerText = order[index+1]!
+            setStatus(order[index+1]!)
+            let status = ['', 'Presente', 'Atrasado', 'Faltou']
+            const newStatus = (status[index+1] ?? '') as "" | "Presente" | "Atrasado" | "Faltou"
+
+            if (agendamento.fixo) {
+              let dataSessão = new Date(getDate(day,'date'))
+              dataSessão.setHours(agendamento.data.getHours())
+              dataSessão.setMinutes(agendamento.data.getMinutes())
+              dataSessão.setSeconds(0,0)
+              dataSessão.setMilliseconds(0)
+              let sessãoTimeStamp = new Timestamp(dataSessão.getTime()/1000,0)
+              setScheduleStatusFixo(newStatus,sessãoTimeStamp,agendamento)
+            }
+            if (!agendamento.fixo) {
+              setScheduleStatus(newStatus,agendamento.id)
+            }
+          }}
       >
         {status}
       </span>

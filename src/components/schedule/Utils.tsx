@@ -92,7 +92,7 @@ export function Footer() {
 
   function setWeek(e) {
     let target:HTMLInputElement = e.target
-    console.log(e.target.value)
+    // console.log(e.target.value)
     let [y,m,d] = target.value.split('-').map(Number)
     let week = new Date(y!,m!-1,d)
     let day = week.getDay()
@@ -139,7 +139,6 @@ export function getDate(
   if (parsedURL) {
     let [d, m, y] = parsedURL!.split(/[\/-]/).map(Number);
     let date = new Date(y!, m! - 1, d);
-
     // Alinhar para segunda sempre ficar com o dia correto
     while (date.getDay() > 1) {
       date = new Date(date.getTime() - 86400000);
@@ -153,14 +152,7 @@ export function getDate(
 
     // Ajusts the monthString
     let monthString;
-    if (date.getMonth() == 0) {
-      monthString = "12";
-    } else if ((date.getMonth() + 1).toString().length == 1) {
-      monthString = "0" + (date.getMonth() + 1);
-    } else {
-      monthString = date.getMonth() + 1;
-    }
-
+    monthString = (date.getMonth() + 1).toString().padStart(2,'0')
     if (returnType == "string") {
       return `${date.getDate()}/${monthString}`;
     }

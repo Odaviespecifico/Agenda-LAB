@@ -67,6 +67,20 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
       const form: HTMLFormElement = target;
       const rawData = Object.fromEntries(new FormData(form));
 
+      if (!day || typeof day !== "string" || !day.includes("/")) {
+        console.error("Invalid day value:", day);
+        return;
+      }
+
+      const dayParts = day.split("/").map(Number);
+      if (dayParts.length < 2 || !Number.isFinite(dayParts[0]) || !Number.isFinite(dayParts[1])) {
+        console.error("Invalid parsed day value:", day);
+        return;
+      }
+      const d = dayParts[0] as number;
+      const m = dayParts[1] as number;
+      const currentYear = new Date().getFullYear();
+
       // Para agendamentos Fixos
       if (rawData.fixo) {
         const inputFixoInicio = document.getElementById(
@@ -96,10 +110,8 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
           return;
         }
 
-        let dayIndex: Date | Number = new Date(Date.now());
-        dayIndex.setDate(Number(day!.split("/")[0]));
-        dayIndex.setMonth(Number(day!.split("/")[1]) - 1);
-        dayIndex = dayIndex.getDay();
+        const weekDay = new Date(currentYear, m - 1, d, 0, 0, 0, 0).getDay();
+        dayIndex = weekDay;
       }
       let formData: formAnswer = {
         name: String(rawData.name ?? ""),
@@ -115,21 +127,15 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
         formData.day_index = dayIndex;
         formData.fixo = true
       }
-      // Cria a data para o agendamento
-      let date = new Date(Date.now());
-      if (day && typeof day === "string" && day.includes("/")) {
-        const [d, m] = day.split("/");
-        date.setMonth(parseInt(m ?? "1") - 1);
-        date.setDate(parseInt(d ?? "1"));
-      } else {
-        console.error("Invalid day value:", day);
-        return;
-      }
+
       let startTime = localStorage.getItem("startTime")?.split("h");
       console.log(startTime)
       const hour = parseInt(startTime?.at(0)!);
       const minute = parseInt(startTime?.at(1) ? startTime.at(1)! : "0");
-      date.setHours(hour, minute, 0, 0);
+
+      // Build the date directly to avoid month overflow on day 29/30/31.
+      const date = new Date(currentYear, m - 1, d, hour, minute, 0, 0);
+
       // Adiciona ao Banco de dados
       if (fixo) {
         addSession(

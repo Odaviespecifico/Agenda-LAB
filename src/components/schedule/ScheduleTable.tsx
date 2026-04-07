@@ -2,7 +2,9 @@ import { TableRow } from "./TableRow.js";
 import { Agendamento, getDate } from "./Utils.js";
 import { ModalUpdateStudent } from "./Modals.js";
 import { useEffect, useState } from "react";
+import { horarios } from "../../config.js";
 export function ScheduleTable() {
+  
   return (
     <div className="h-full overflow-y-auto p-2">
       <table className="w-full table-fixed border-collapse rounded-xl overflow-hidden shadow-lg">
@@ -31,11 +33,9 @@ export function ScheduleTable() {
           </tr>
         </thead>
         <tbody className="bg-white text-center">
-          <TableRow startTime={'14h'} endTime={"14h45"} />
-          <TableRow startTime={'15h'} endTime={"15h45"} />
-          <TableRow startTime={"16h15"} endTime={"17h"} />
-          <TableRow startTime={'17h15'} endTime={"18h"} />
-          <TableRow startTime={'18h'} endTime={"18h45"} />
+          {horarios.map((horario, index) => (
+            <TableRow key={index} startTime={horario.startTime} endTime={horario.endTime} />
+          ))}
         </tbody>
       </table>
     </div>

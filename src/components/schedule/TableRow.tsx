@@ -5,34 +5,10 @@ import { deletefromDB, setScheduleStatusFixo } from "../../firebase.js";
 import { Pencil } from "lucide-react";
 import { setScheduleStatus } from "../../firebase.js";
 import { Timestamp } from "firebase/firestore";
+import { getSaturdayEndTime, getSaturdayStartTime, isValidTime, notAllowedTimesStaturday } from "../../config.js";
 export function TableRow({ startTime, endTime }) {
-  function getSaturdayStartTime(startTime) {
-    switch (startTime) {
-      case '14h':
-        return '9h';
-      case '15h':
-        return '10h';
-      case '16h15':
-        return '11h';
-      case '17h15':
-        return '12h';
-    }
-  }
-  function getSaturdayEndTime(endTime) {
-    switch (endTime) {
-      case '14h45':
-        return '9h45';
-      case '15h45':
-        return '10h45'
-      case '17h':
-        return '11h45'
-      case '18h':
-        return '12h45'
-    }
-  }
-
   function renderSaturday() {
-    if (startTime != '18h') {
+    if (!notAllowedTimesStaturday.includes(startTime)) {
       return (
         <>
           <td className="select-none text-center bg-lime-100 py-2 px-2 font-semibold group-hover/table:bg-lime-200 transition-all">{getSaturdayStartTime(startTime)} até {getSaturdayEndTime(endTime)}</td>
@@ -56,7 +32,7 @@ export function TableRow({ startTime, endTime }) {
 function RowData({ day, startTime }) {
   const semanaContext = useContext(SemanaContext);
   const modalContext = useContext(ModalContext);
-  const backgroundClass = (startTime != '18h' || day == 1 || day == 3) ? '' : 'bg-neutral-300';
+  const backgroundClass = (isValidTime(startTime, day) ? '' : 'bg-neutral-300');
   function verifySession(agendamento: Agendamento) {
     return (
       agendamento.data.getDay() === day &&
@@ -66,7 +42,7 @@ function RowData({ day, startTime }) {
 
   const sessions = semanaContext?.semana.agendamentos.filter(verifySession) || [];
   function renderScheduleButton() {
-    if (startTime != '18h' || day == 1 || day == 3) {
+    if (isValidTime(startTime, day)) {
       return (
         <button
         onClick={() => modalContext.showRegisterModal(day, startTime,sessions)}

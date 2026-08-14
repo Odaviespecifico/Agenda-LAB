@@ -1,11 +1,7 @@
 export function isValidTime(startTime,day) {
   // Segunda e quarta tem horário até as 18h
   if (startTime == '18h' && (day === 1 || day === 3)) return true
-  // Quarta tem horário até as 19h
-  if (startTime == '19h' && (day === 3)) return true
 
-  // Sexta-feira tem horário até as 14h
-  if (startTime == '14h' && (day === 5)) return false
   if ((startTime == '19h' || startTime == '18h')) return false
   return true
 }

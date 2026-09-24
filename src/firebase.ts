@@ -5,6 +5,7 @@ import {
   query,
   where,
   getDocs,
+  getDocsFromServer,
   onSnapshot,
   deleteDoc,
   getDoc,
@@ -16,6 +17,8 @@ import {
 } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { Agendamento, Semana, getDate } from "./components/schedule/Utils.js";
+
+import { overlappingHolidays, slotDate, validateHoliday, type Holiday, type HolidayInput } from "./holidays.js";
 
 import { collection, addDoc, doc } from "firebase/firestore";
 let fireStoreAPIKey;
@@ -54,85 +57,63 @@ export async function addSession(
   inicioFixo?: Date,
   fimFixo?: Date,
 ) {
-  let toastId
-  console.log(horario)
+  const toastId = toast.loading("Adicionando agendamento para " + nome);
   try {
-    toastId = toast.loading("Adicionando agendamento para " + nome, {
-    })
-    let uploadTimeout = setTimeout(() => {
-      toast.update(toastId, { 
-      render: "Isso está demorando mais do que deveria. Verifique sua internet!", 
-      type: "warning", 
-      isLoading: true, 
-    })
-      let warningTimeout = setTimeout(() => {
-        toast.update(toastId, { 
-        render: "Você parece estar sem internet. O agendamento de " + nome + " Não foi realizado e será feito quando internet estiver disponível!", 
-        type: "warning", 
-        isLoading: false, 
-      })},2000);
-    },7000)
-    let docRef
-    if (fixo) {
-      docRef = await addDoc(collection(db, "agendamentos"), {
-      nome: nome,
-      estágio: estágio,
-      tipo: tipo,
-      conteúdo: conteúdo,
-      data: new Date(
-        ano,
-        mes - 1,
-        dia,
-        Number(horario.split("h")[0]),
-        Number(horario.split("h")[1]),
-        0,
-        0
-      ),
-      horario: horario,
-      responsável: responsável,
-      fixo: fixo,
-      inicioFixo: inicioFixo,
-      fimFixo: fimFixo,
-    });
+    const data = slotDate(new Date(ano, mes - 1, dia), horario);
+    await verifyHolidayBooking(data, Boolean(fixo));
+    if (fixo && (!inicioFixo || !fimFixo || inicioFixo > fimFixo)) {
+      throw new Error("Informe um período válido para o agendamento fixo.");
     }
-    if (!fixo) {
-      console.log(horario)
-      docRef = await addDoc(collection(db, "agendamentos"), {
-      nome: nome,
-      estágio: estágio,
-      tipo: tipo,
-      conteúdo: conteúdo,
-      data: new Date(
-        ano,
-        mes - 1,
-        dia,
-        Number(horario.split("h")[0]),
-        Number(horario.split("h")[1]),
-        0,
-        0
-      ),
-      horario: horario,
-      responsável: responsável,
-      fixo: false
+    await addDoc(collection(db, "agendamentos"), {
+      nome, estágio, tipo, conteúdo, data, horario, responsável, fixo: Boolean(fixo),
+      ...(fixo ? { inicioFixo, fimFixo } : {}),
     });
-    }
-    
-    clearTimeout(uploadTimeout)
-    console.log("Document written with ID: ", docRef.id);
-    toast.update(toastId, { 
-      render: "Agendamento de " + nome + " adicionado com sucesso!", 
-      type: "success", 
-      isLoading: false, 
-      autoClose: 1500
-    });
-  } catch (e) {
-    toast.update(toastId, { 
-      render: "Ocorreu um erro, tentando novamente!", 
-      type: "error", 
-      isLoading: false, 
-      autoClose: 5000 // Close after 5 seconds
-    });
-    console.error("Error adding document: ", e);
+    toast.update(toastId, { render: "Agendamento de " + nome + " adicionado com sucesso!", type: "success", isLoading: false, autoClose: 1500 });
+    return true;
+  } catch (error) {
+    toast.update(toastId, { render: error instanceof Error ? error.message : "Não foi possível salvar o agendamento.", type: "error", isLoading: false, autoClose: 5000 });
+    return false;
+  }
+}
+
+function readHoliday(id: string, data: unknown): Holiday {
+  return { ...validateHoliday(data as HolidayInput), id };
+}
+
+export function listenToHolidays(onChange: (holidays: Holiday[], ready: boolean) => void, onError: (error: unknown) => void) {
+  return onSnapshot(collection(db, "feriados"), { includeMetadataChanges: true }, snapshot => {
+    try {
+      onChange(snapshot.docs.map(document => readHoliday(document.id, document.data())), !snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites);
+    } catch (error) { onError(error); }
+  }, onError);
+}
+
+export async function saveHoliday(value: HolidayInput, id?: string) {
+  const data = validateHoliday(value);
+  if (!auth.currentUser) throw new Error("Entre na sua conta para cadastrar feriados.");
+  if (id) await updateDoc(doc(db, "feriados", id), data);
+  else await addDoc(collection(db, "feriados"), data);
+}
+
+export async function deleteHoliday(id: string) {
+  if (!auth.currentUser) throw new Error("Entre na sua conta para excluir feriados.");
+  await deleteDoc(doc(db, "feriados", id));
+}
+
+/** Recheck server state at submission, including a holiday added while the form was open. */
+export async function verifyHolidayBooking(date: Date, recurring: boolean) {
+  if (!Number.isFinite(date.getTime())) throw new Error("Informe uma data válida.");
+  let holidays: Holiday[];
+  try {
+    const snapshot = await getDocsFromServer(collection(db, "feriados"));
+    holidays = snapshot.docs.map(document => readHoliday(document.id, document.data()));
+  } catch {
+    throw new Error("Não foi possível verificar os feriados. Verifique sua conexão e tente novamente.");
+  }
+  const conflicts = overlappingHolidays(holidays, date);
+  // Recurring series are retained; the calendar skips only affected occurrences.
+  if (!recurring && conflicts.length) {
+    throw new Error(`Horário indisponível por feriado: ${conflicts.map(holiday => holiday.name).join(", ")}.`);
   }
 }
 
@@ -194,7 +175,7 @@ export function listenToChancesInDB(setterFunction: Function) {
   }
 
   const weekMiliseconds = 7 * 24 * 60 * 60 * 1000;
-  const date = getDate('0', 'date') as Date;
+  const date = getDate(1, 'date') as Date;
   const dateNextWeek = new Date(date.getTime() + weekMiliseconds);
 
   const qFixo = query(collection(db, "agendamentos"),
@@ -207,7 +188,7 @@ export function listenToChancesInDB(setterFunction: Function) {
   const qRegular = query(collection(db, "agendamentos"),
     where("fixo", "==", false),
     where("data", ">=", Timestamp.fromDate(date)),
-    where("data", "<=", Timestamp.fromDate(dateNextWeek))
+    where("data", "<", Timestamp.fromDate(dateNextWeek))
   );
 
   const unsubscribeFixo = onSnapshot(qFixo, (snapshot) => {
@@ -225,7 +206,8 @@ export function listenToChancesInDB(setterFunction: Function) {
       fixedAgendamentosCache.set(doc.id, new Agendamento(
         doc.data().nome, doc.data().estágio, doc.data().tipo,
         doc.data().conteúdo, doc.data().responsável,
-        new Date(doc.data().data.seconds * 1000),true,'',doc.id,presencas
+        new Date(doc.data().data.seconds * 1000),true,'',doc.id,presencas,
+        doc.data().inicioFixo?.toDate(), doc.data().fimFixo?.toDate()
       ));
     });
     fixedQueryInitialLoadComplete = true;
@@ -379,46 +361,29 @@ export async function signInWithGoogle() {
 }
 
 export async function updateSchedule(agendamento:Agendamento, novoAgendamento:Agendamento, inicioFixo:Date|null=null, fimFixo:Date|null=null) {
-  let toastloading = toast.loading("Atualizando o agendamento")
-  console.log(agendamento)
-  console.log(novoAgendamento)
-  let q = query(collection(db,"agendamentos"), where('data', '==', Timestamp.fromDate(agendamento.data)), where("nome", '==', agendamento.nome), where("estágio", '==', agendamento.estágio))
+  const toastloading = toast.loading("Atualizando o agendamento");
   try {
-    const querySnapshot = getDocs(q)
-    ;(await querySnapshot).forEach(async (doc) => {
-      await updateDoc(doc.ref, {
-        'conteúdo': novoAgendamento.conteúdo, 
-        'estágio': novoAgendamento.estágio, 
-        'data': Timestamp.fromDate(novoAgendamento.data),
-        'horario': `${novoAgendamento.data.getHours()}:${(novoAgendamento.data.getMinutes().toString.length == 1 ? '0' + novoAgendamento.data.getMinutes() : novoAgendamento.data.getMinutes())}`,
-        'nome': novoAgendamento.nome,
-        'tipo': novoAgendamento.tipo,
-      })
-      if (agendamento.fixo) {
-        await updateDoc(doc.ref, {
-          'inicioFixo': Timestamp.fromDate(inicioFixo!),
-          'fimFixo': Timestamp.fromDate(fimFixo!),
-        })
-      }
-      console.log("Updated document with ID: " + doc.id)
-    })
-    toast.update(toastloading, {
-      render: 'Agendamento atualizado',
-      isLoading: false,
-      type: 'success',
-      autoClose: 1500
-    })
-    return true
-  }
-  catch (error) {
-    console.error("Erro atualizando documento: ", error);
-    toast.update(toastloading, {
-      render: 'Ocorreu um erro ao atualizar o agendamento',
-      isLoading: false,
-      type: 'error',
-      autoClose: 1500
-    })
-    return false
+    if (!agendamento.id) throw new Error("Agendamento não encontrado.");
+    // Editing details of an existing conflict is allowed; moving into one is not.
+    const moved = agendamento.data.getTime() !== novoAgendamento.data.getTime();
+    await verifyHolidayBooking(novoAgendamento.data, Boolean(agendamento.fixo) || !moved);
+    if (agendamento.fixo && (!inicioFixo || !fimFixo || inicioFixo > fimFixo)) {
+      throw new Error("Informe um período válido para o agendamento fixo.");
+    }
+    await updateDoc(doc(db, "agendamentos", agendamento.id), {
+      conteúdo: novoAgendamento.conteúdo,
+      estágio: novoAgendamento.estágio,
+      data: Timestamp.fromDate(novoAgendamento.data),
+      horario: `${novoAgendamento.data.getHours()}h${novoAgendamento.data.getMinutes()}`,
+      nome: novoAgendamento.nome,
+      tipo: novoAgendamento.tipo,
+      ...(agendamento.fixo ? { inicioFixo: Timestamp.fromDate(inicioFixo!), fimFixo: Timestamp.fromDate(fimFixo!) } : {}),
+    });
+    toast.update(toastloading, { render: "Agendamento atualizado", type: "success", isLoading: false, autoClose: 1500 });
+    return true;
+  } catch (error) {
+    toast.update(toastloading, { render: error instanceof Error ? error.message : "Não foi possível atualizar o agendamento.", type: "error", isLoading: false, autoClose: 5000 });
+    return false;
   }
 }
 

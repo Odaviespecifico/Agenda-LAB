@@ -1,9 +1,15 @@
+import { toast } from "react-toastify";
+import { dateKey, parseLocalDate } from "../../dates.js";
+import { useHolidays } from "./HolidayContext.js";
+import { slotDate } from "../../holidays.js";
 import { ModalContext, SemanaContext } from "../../Agenda.js";
 import { useContext, useEffect, useState, useRef, type RefCallback, type FormEvent } from "react";
 import { Agendamento, getDate } from "./Utils.js";
 import { addSession, updateSchedule } from "../../firebase.js";
 
 export function RegisterStudentModal({ ref, scheduleDate }) {
+  const { ready: holidaysReady } = useHolidays();
+  const [saving, setSaving] = useState(false);
   let semanaContext = useContext(SemanaContext);
   let formRef = useRef(null);
   let estagioRef = useRef<HTMLInputElement|null>(null)
@@ -16,7 +22,11 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     window.addEventListener('keydown', handleEsc)
     setDay(getDate(parseInt(localStorage.getItem("day")!), "string") as string);
     setTime(localStorage.getItem("startTime"));
-  }, [localStorage]);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("keydown", handleEsc);
+    };
+  }, []);
   
   function handleStorageChange() {
     setDay(getDate(parseInt(localStorage.getItem("day")!), "string") as string);
@@ -55,129 +65,33 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     day_index?: Number,
   };
 
-  function handleFormSubmit(e) {
+  async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const target = e.target;
-    let dates
-    let dayIndex
-    if (target && target instanceof HTMLFormElement) {
-      if (!target.reportValidity()) {
+    const target = e.currentTarget;
+    if (!holidaysReady || saving || !target.reportValidity()) return;
+    const rawData = Object.fromEntries(new FormData(target));
+    try {
+      const date = slotDate(getDate(Number(localStorage.getItem("day")), "date") as Date, localStorage.getItem("startTime") ?? "");
+      const inicioFixo = fixo ? parseLocalDate(String(rawData.inicio_fixo)) : undefined;
+      const fimFixo = fixo ? parseLocalDate(String(rawData.fim_fixo)) : undefined;
+      if (inicioFixo && fimFixo && inicioFixo > fimFixo) {
+        toast.error("A data final não pode ser menor que a inicial!");
         return;
       }
-      const form: HTMLFormElement = target;
-      const rawData = Object.fromEntries(new FormData(form));
-
-      if (!day || typeof day !== "string" || !day.includes("/")) {
-        console.error("Invalid day value:", day);
-        return;
-      }
-
-      const dayParts = day.split("/").map(Number);
-      if (dayParts.length < 2 || !Number.isFinite(dayParts[0]) || !Number.isFinite(dayParts[1])) {
-        console.error("Invalid parsed day value:", day);
-        return;
-      }
-      const d = dayParts[0] as number;
-      const m = dayParts[1] as number;
-      const currentYear = new Date().getFullYear();
-
-      // Para agendamentos Fixos
-      if (rawData.fixo) {
-        const inputFixoInicio = document.getElementById(
-          "inicio_fixo"
-        ) as HTMLInputElement | null;
-        const inputFixoFim = document.getElementById(
-          "fim_fixo"
-        ) as HTMLInputElement | null;
-        if (!inputFixoFim || !inputFixoInicio) {
-          console.error("Input não encontrado");
-          return;
-        }
-        let [yInicio,mInicio,dInicio] = inputFixoInicio.value.split('-').map(Number)
-        let [yFim,mFim,dFim] = inputFixoFim.value.split('-').map(Number)
-        
-        dates = [new Date(yInicio!,mInicio!-1,dInicio,0,0,0,0), new Date(yFim!,mFim!-1,dFim,0,0,0,0)];
-
-        // Verifica se o input fim é maior que o início
-        if (dates[0]! > dates[1]!) {
-          inputFixoFim.setCustomValidity(
-            "A data final não pode ser menor que a inicial!"
-          );
-          inputFixoFim.reportValidity();
-          setTimeout(() => {
-            inputFixoFim.setCustomValidity("");
-          }, 1500);
-          return;
-        }
-
-        const weekDay = new Date(currentYear, m - 1, d, 0, 0, 0, 0).getDay();
-        dayIndex = weekDay;
-      }
-      let formData: formAnswer = {
-        name: String(rawData.name ?? ""),
-        estágio: String(rawData.estágio ?? ""),
-        destalhes: String(rawData.detalhes ?? ""),
-        tipo: String(rawData.tipo ?? ""),
-        fixo: false,
-      };
-
-      if (fixo) {
-        formData.inicio_fixo = dates[0];
-        formData.fim_fixo = dates[1];
-        formData.day_index = dayIndex;
-        formData.fixo = true
-      }
-
-      let startTime = localStorage.getItem("startTime")?.split("h");
-      console.log(startTime)
-      const hour = parseInt(startTime?.at(0)!);
-      const minute = parseInt(startTime?.at(1) ? startTime.at(1)! : "0");
-
-      // Build the date directly to avoid month overflow on day 29/30/31.
-      const date = new Date(currentYear, m - 1, d, hour, minute, 0, 0);
-
-      // Adiciona ao Banco de dados
-      if (fixo) {
-        addSession(
-        formData.name,
-        formData.estágio,
-        formData.tipo,
-        formData.destalhes,
-        date.getFullYear(),
-        date.getDate(),
-        `${date.getHours()}h${date.getMinutes()}`,
-        date.getMonth() + 1,
-        localStorage.getItem("user")!,
-        formData.fixo,
-        formData.inicio_fixo,
-        formData.fim_fixo
+      setSaving(true);
+      const success = await addSession(
+        String(rawData.name ?? ""), String(rawData.estágio ?? ""), String(rawData.tipo ?? ""),
+        String(rawData.detalhes ?? ""), date.getFullYear(), date.getDate(),
+        `${date.getHours()}h${date.getMinutes()}`, date.getMonth() + 1,
+        localStorage.getItem("user") ?? "", fixo, inicioFixo, fimFixo,
       );
+      if (success) {
+        target.reset();
+        closeModal();
+        setFixo(false);
       }
-      else {
-        addSession(
-                formData.name,
-                formData.estágio,
-                formData.tipo,
-                formData.destalhes,
-                date.getFullYear(),
-                date.getDate(),
-                `${date.getHours()}h${date.getMinutes()}`,
-                date.getMonth() + 1,
-                localStorage.getItem("user")!,
-                false,
-            );
-      }
-      
-
-      // Limpa o formulátio
-      target.reset();
-
-      // Hide the dialog
-      let dialog = document.querySelector("dialog");
-      dialog?.close();
-      dialog?.classList.replace('flex','hidden')
-      setFixo(false);
-    }
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível salvar o agendamento."); }
+    finally { setSaving(false); }
   }
 
   function togleFixo(e) {
@@ -306,6 +220,7 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
 
     <div className="flex items-center gap-2">
       <input
+        checked={fixo}
         type="checkbox"
         name="fixo"
         id="fixo"
@@ -316,12 +231,15 @@ export function RegisterStudentModal({ ref, scheduleDate }) {
     </div>
 
     {optionsFixo()}
+    {fixo && <p className="text-sm text-amber-900">Datas que coincidirem com feriados serão ignoradas; as demais continuam agendadas.</p>}
+    {!holidaysReady && <p role="status" className="text-sm text-amber-900">Aguarde a sincronização dos feriados para salvar.</p>}
 
     <button
       type="submit"
-      className="self-center bg-gradient-to-r from-blue-400 to-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-all"
+      disabled={!holidaysReady || saving}
+      className="self-center bg-gradient-to-r from-blue-400 to-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      Confirmar agendamento
+      {saving ? "Salvando…" : "Confirmar agendamento"}
     </button>
   </form>
 </dialog>
@@ -339,7 +257,7 @@ export function StudentSizeModal({visible, setVisibility, modal}:StudentsSizeMod
     setVisibility(false)
     modal.classList.replace('hidden','flex')
     // Highlight the first one
-    let input:HTMLInputElement = document.querySelector('dialog input')!
+    let input:HTMLInputElement = modal.querySelector('input')!
     console.log(input)
     input.focus()
   }
@@ -369,6 +287,8 @@ export function StudentSizeModal({visible, setVisibility, modal}:StudentsSizeMod
 }
 
 export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
+  const { ready: holidaysReady } = useHolidays();
+  const [saving, setSaving] = useState(false);
   const modalContext = useContext(ModalContext)
   let estagioRef = useRef<HTMLInputElement|null>(null)
   let [filter, setFilter] = useState<string>('NOTHING')
@@ -388,15 +308,14 @@ export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
     refs.estagio.current!.value = agendamento.estágio
     refs.tipo.current!.value = agendamento.tipo
     refs.detalhes.current!.value = agendamento.conteúdo
-    refs.horario.current!.value = `${agendamento.data.getHours()}:${(agendamento.data.getMinutes().toString().length == 1 ? '0' + agendamento.data.getMinutes() : agendamento.data.getMinutes())}`
-    refs.date.current!.value = `${agendamento.data.getFullYear()}-${((agendamento.data.getMonth() + 1).toString().length == 1) ? '0' + (agendamento.data.getMonth() + 1) : (agendamento.data.getMonth() + 1)}-${(agendamento.data.getDate().toString().length == 1) ? '0' + agendamento.data.getDate() : agendamento.data.getDate()}`
-    document.addEventListener("keydown", (e) => {
-      if (e.key == "Escape") {
-        modalContext.setModalUpdateSchedule()
-      }
-    })
-
-  }, [])
+    refs.horario.current!.value = `${String(agendamento.data.getHours()).padStart(2, "0")}:${String(agendamento.data.getMinutes()).padStart(2, "0")}`;
+    refs.date.current!.value = dateKey(agendamento.data);
+    if (refs.fixoInicio.current && agendamento.inicioFixo) refs.fixoInicio.current.value = dateKey(agendamento.inicioFixo);
+    if (refs.fixoFim.current && agendamento.fimFixo) refs.fixoFim.current.value = dateKey(agendamento.fimFixo);
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === "Escape") modalContext.setModalUpdateSchedule(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [agendamento]);
 
   function renderEstagios() {
     let estagios = ['Yard 1a', 'Yard 1b', 'Yard 2a', 'Yard 2b', 'Garden 1', 'Garden 2', 'Garden 3', 'Garden 4', 'Fun 1', 'Fun 2', 'Fun 3', 'Fun 4', 'Kids 1', 'Kids 2', 'Kids 3', 'Kids 4','Teen up 1', 'Teen up 2', 'Teen up 3', 'Teen up 4', 'Teen up 5', 'Teen up 6',
@@ -435,30 +354,23 @@ export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
     }
   }
 
-  async function handleFormSubmit(e:FormEvent) {
-    e.preventDefault()
-    const milisecondsInDay = 24*60*60*1000
-    const newDate = refs.date.current!.valueAsDate 
-    newDate?.setTime(newDate.getTime() + milisecondsInDay)
-    newDate?.setHours(Number(refs.horario.current?.value.split(':')[0]),Number(refs.horario.current?.value.split(':')[1]))
-    let novoAgendamento = new Agendamento(refs.nome.current!.value,refs.estagio.current!.value,refs.tipo.current!.value,refs.detalhes.current!.value,agendamento.responsável,newDate,agendamento.fixo)
-    let sucess
-    if (agendamento.fixo) {
-      let inicioFixo = refs.fixoInicio.current!.valueAsDate 
-      inicioFixo?.setTime(inicioFixo?.getTime() + milisecondsInDay)
-      inicioFixo?.setHours(0,0,0,0)
-
-      let fimFixo = refs.fixoFim.current!.valueAsDate 
-      fimFixo?.setTime(fimFixo?.getTime() + milisecondsInDay)
-      fimFixo?.setHours(0,0,0,0)
-      sucess = await updateSchedule(agendamento, novoAgendamento,inicioFixo,fimFixo)
-    }
-    else {
-      sucess = await updateSchedule(agendamento, novoAgendamento)
-    }
-    if (sucess) {
-      modalContext.setModalUpdateSchedule()
-    }
+  async function handleFormSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!holidaysReady || saving || !refs.form.current?.reportValidity()) return;
+    try {
+      const newDate = parseLocalDate(refs.date.current!.value, refs.horario.current!.value);
+      const novoAgendamento = new Agendamento(refs.nome.current!.value, refs.estagio.current!.value, refs.tipo.current!.value, refs.detalhes.current!.value, agendamento.responsável, newDate, agendamento.fixo);
+      const inicioFixo = agendamento.fixo ? parseLocalDate(refs.fixoInicio.current!.value) : null;
+      const fimFixo = agendamento.fixo ? parseLocalDate(refs.fixoFim.current!.value) : null;
+      if (inicioFixo && fimFixo && inicioFixo > fimFixo) {
+        toast.error("A data final não pode ser menor que a inicial!");
+        return;
+      }
+      setSaving(true);
+      const success = await updateSchedule(agendamento, novoAgendamento, inicioFixo, fimFixo);
+      if (success) modalContext.setModalUpdateSchedule();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o agendamento."); }
+    finally { setSaving(false); }
   }
 
   return(
@@ -536,6 +448,7 @@ export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
       <label htmlFor="horario" className="font-medium">Horário:</label>
       <input
         type="time"
+        required
         name="horario"
         className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
         ref={refs.horario}
@@ -545,18 +458,22 @@ export function ModalUpdateStudent({agendamento}:{agendamento:Agendamento}) {
       <label htmlFor="data" className="font-medium">data:</label>
       <input
         type="date"
+        required
         name="data"
         className="border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
         ref={refs.date}
       />
     </div>
     {optionsFixo()}
+    {agendamento.fixo && <p className="text-sm text-amber-900">Datas que coincidirem com feriados serão ignoradas; as demais continuam agendadas.</p>}
+    {!holidaysReady && <p role="status" className="text-sm text-amber-900">Aguarde a sincronização dos feriados para salvar.</p>}
 
     <button
       type="submit"
-      className="self-center bg-gradient-to-r from-blue-400 to-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-all"
+      disabled={!holidaysReady || saving}
+      className="self-center bg-gradient-to-r from-blue-400 to-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      Atualizar Agendamento
+      {saving ? "Salvando…" : "Atualizar Agendamento"}
     </button>
     </form>
   </div>

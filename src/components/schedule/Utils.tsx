@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
+import { weekDate } from "../../dates.js";
 import { signOut,getAuth } from "firebase/auth";
 import type { Timestamp } from "firebase/firestore";
 
-export function Header({ user, setUser }) {
+export function Header({ user, setUser, onOpenHolidays }) {
     async function handleLogout() {
     const auth = getAuth()
     await signOut(auth);
@@ -14,6 +15,7 @@ export function Header({ user, setUser }) {
       <h1 className="font-bold">Agenda Lab</h1>
 
       <div className="flex items-center gap-4">
+        <button onClick={onOpenHolidays} className="px-3 py-1 text-sm bg-purple-100 text-purple-900 rounded-md hover:bg-purple-200">Feriados</button>
         <h1>
           Usuário: <span className="font-bold">{user}</span>
         </h1>
@@ -43,11 +45,13 @@ export class Agendamento {
   responsável: string;
   data: Date;
   fixo?: boolean;
+  inicioFixo?: Date;
+  fimFixo?: Date;
   status?: 'Presente' | 'Atrasado' | 'Faltou' | '';
   id?: string;
   presenças?: Array<{data:Timestamp,status:'Presente' | 'Atrasado' | 'Faltou' | ''}>;
 
-  constructor(nome, estágio, tipo, conteúdo, responsável, data, fixo?, status?, id?,presenças?) {
+  constructor(nome, estágio, tipo, conteúdo, responsável, data, fixo?, status?, id?,presenças?, inicioFixo?, fimFixo?) {
     this.nome = nome;
     this.estágio = estágio;
     this.tipo = tipo;
@@ -57,6 +61,8 @@ export class Agendamento {
     this.fixo = fixo;
     this.status = status;
     this.id = id;
+    this.inicioFixo = inicioFixo;
+    this.fimFixo = fimFixo;
     this.presenças = presenças
   }
 }
@@ -133,32 +139,9 @@ export function getDate(
   dayIndex,
   returnType: "string" | "date" = "string"
 ): string | Date {
-  const parsedURL = new URLSearchParams(window.location.search)
-    .get("date")
-    ?.replace("-", "/");
-  if (parsedURL) {
-    let [d, m, y] = parsedURL!.split(/[\/-]/).map(Number);
-    let date = new Date(y!, m! - 1, d);
-    // Alinhar para segunda sempre ficar com o dia correto
-    while (date.getDay() > 1) {
-      date = new Date(date.getTime() - 86400000);
-    }
-    if (date.getDay() == 0) {
-      date = new Date(date.getTime() + 86400000);
-    }
-
-    // Ajustar a data exibida com base no indice
-    date = new Date(date.getTime() + 86400000 * dayIndex - 1);
-
-    // Ajusts the monthString
-    let monthString;
-    monthString = (date.getMonth() + 1).toString().padStart(2,'0')
-    if (returnType == "string") {
-      return `${date.getDate()}/${monthString}`;
-    }
-    if (returnType == "date") {
-      return date;
-    }
-  }
-  return "";
+  const value = new URLSearchParams(window.location.search).get("date");
+  const [d, m, y] = (value ?? "").split(/[\/-]/).map(Number);
+  const selected = d && m && y ? new Date(y, m - 1, d) : new Date();
+  const date = weekDate(selected, Number(dayIndex));
+  return returnType === "date" ? date : `${date.getDate()}/${String(date.getMonth() + 1).padStart(2, "0")}`;
 }

@@ -1,3 +1,6 @@
+import { useHolidays } from "./HolidayContext.js";
+import { appointmentHolidayState, holidayPeriod, overlappingHolidays, slotDate } from "../../holidays.js";
+import { dateKey } from "../../dates.js";
 import { useContext, useEffect, useState } from "react";
 import { Semana, Agendamento, getDate } from "./Utils.js";
 import { ModalContext, SemanaContext } from "../../Agenda.js";
@@ -32,21 +35,29 @@ export function TableRow({ startTime, endTime }) {
 function RowData({ day, startTime }) {
   const semanaContext = useContext(SemanaContext);
   const modalContext = useContext(ModalContext);
-  const backgroundClass = (isValidTime(startTime, day) ? '' : 'bg-neutral-300');
+  const { holidays, ready } = useHolidays();
+  const occurrence = slotDate(getDate(day, "date") as Date, startTime);
+  const conflicts = overlappingHolidays(holidays, occurrence);
+  const backgroundClass = conflicts.length ? 'bg-amber-100' : (isValidTime(startTime, day) ? '' : 'bg-neutral-300');
   function verifySession(agendamento: Agendamento) {
     return (
-      agendamento.data.getDay() === day &&
+      (agendamento.fixo
+        ? agendamento.data.getDay() === day &&
+          (!agendamento.inicioFixo || dateKey(occurrence) >= dateKey(agendamento.inicioFixo)) &&
+          (!agendamento.fimFixo || dateKey(occurrence) <= dateKey(agendamento.fimFixo))
+        : dateKey(agendamento.data) === dateKey(occurrence)) &&
       (agendamento.data.getHours()+'h' === startTime || `${agendamento.data.getHours()}h${agendamento.data.getMinutes()}` === startTime)
     );
   }
 
   const sessions = semanaContext?.semana.agendamentos.filter(verifySession) || [];
   function renderScheduleButton() {
-    if (isValidTime(startTime, day)) {
+    if (isValidTime(startTime, day) && conflicts.length === 0) {
       return (
         <button
+        disabled={!ready}
         onClick={() => modalContext.showRegisterModal(day, startTime,sessions)}
-        className="mt-1 w-full px-2 py-1 bg-blue-50 text-blue-800 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100"
+        className="mt-1 w-full px-2 py-1 bg-blue-50 text-blue-800 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 disabled:opacity-40"
         >
           Agendar Aluno
         </button>
@@ -56,8 +67,9 @@ function RowData({ day, startTime }) {
   return (
     <td className={backgroundClass + " group relative border-l border-gray-200 align-top px-1 py-1"}>
       <div className="flex flex-col gap-1">
+        {conflicts.map(holiday => <div key={holiday.id} className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-950"><strong className="block">{holiday.name}</strong>{holidayPeriod(holiday)}<span className="block text-xs">Indisponível para agendamentos</span></div>)}
         {sessions.map((agendamento, idx) => (
-          <Session key={idx} agendamento={agendamento} day={day} />
+          <Session key={agendamento.id ?? idx} agendamento={agendamento} day={day} />
         ))}
           {renderScheduleButton()}
       </div>
@@ -66,6 +78,10 @@ function RowData({ day, startTime }) {
 }
 
 function Session({ agendamento, day }: { agendamento: Agendamento, day:Number }) {
+  const { holidays, ready } = useHolidays();
+  const occurrence = new Date(getDate(day, "date"));
+  occurrence.setHours(agendamento.data.getHours(), agendamento.data.getMinutes(), 0, 0);
+  const { conflicts, skipped } = appointmentHolidayState(holidays, occurrence, Boolean(agendamento.fixo));
   useEffect(() => {
     console.log('Usando effect')
     if (agendamento.presenças) {
@@ -131,8 +147,9 @@ function Session({ agendamento, day }: { agendamento: Agendamento, day:Number })
   }
   return (
     <div
-      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all cursor-pointer ${agendamento.fixo ? 'border-2' : ''}  ${statusStyle(status as 'P' | 'A' | 'F' | '')}`}
+      className={`${bgColor} relative rounded-lg p-2 px-3 shadow-sm hover:shadow-md transition-all cursor-pointer ${agendamento.fixo ? 'border-2' : ''}  ${skipped ? "opacity-60" : statusStyle(status as 'P' | 'A' | 'F' | '')}`}
     >
+      {conflicts.length > 0 && <p className="mb-1 text-xs font-semibold text-amber-950">{skipped ? "Ignorado por feriado" : "Conflito com feriado"}</p>}
       <div className="overflow-x-hidden hover:overflow-x-auto peer">
         <span>
           <b>Aluno {agendamento.fixo ? "fixo" : ""}:</b> {agendamento.nome} <br />
@@ -155,9 +172,13 @@ function Session({ agendamento, day }: { agendamento: Agendamento, day:Number })
         strokeWidth={2}
         />
       </span>
-      <span
-        className="absolute flex items-center select-none justify-center bottom-1 right-1 w-5 h-5 p-0.5 rounded-full bg-blue-100 opacity-0 peer-hover:opacity-100 hover:bg-blue-300 hover:opacity-100  cursor-pointer transition"
+      <button
+        type="button"
+        disabled={skipped || !ready}
+        aria-label={skipped ? "Presença indisponível: ignorado por feriado" : `Alterar presença de ${agendamento.nome}`}
+        className="disabled:invisible absolute flex items-center select-none justify-center bottom-1 right-1 w-5 h-5 p-0.5 rounded-full bg-blue-100 opacity-0 peer-hover:opacity-100 hover:bg-blue-300 hover:opacity-100  cursor-pointer transition"
         onClick={async (e) => {
+            if (skipped || !ready) return;
             const order = ['','P','A','F']
             const target = e.target as HTMLSpanElement
             let index = order.indexOf(target.innerText)
@@ -182,7 +203,7 @@ function Session({ agendamento, day }: { agendamento: Agendamento, day:Number })
           }}
       >
         {status}
-      </span>
+      </button>
       
     </div>
   );
